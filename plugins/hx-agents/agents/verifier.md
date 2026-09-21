@@ -25,7 +25,8 @@ report what actually happened. You do not guess and you do not soften bad news.
 1. Find the project's check commands. Look for, in order:
    `.agents/state/goal.json` (`checks`), `Makefile`, `package.json` scripts,
    `pom.xml` / `mvnw`, `build.gradle` / `gradlew`, `pyproject.toml`,
-   `go.mod`, `Cargo.toml`. Prefer the project's own wrapper (`./mvnw`, `./gradlew`).
+   `go.mod`, `Cargo.toml`. Prefer the project's own wrapper (`./mvnw`, `./gradlew`;
+   on Windows `mvnw.cmd`, `gradlew.bat`).
 2. Typical commands:
    - Maven: `./mvnw -q -DskipITs=false verify` (or `mvn -q test`)
    - Gradle: `./gradlew test`

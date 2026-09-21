@@ -1,0 +1,4 @@
+# Keep LF everywhere so hooks/skills behave the same on Windows checkouts (Node and agy read LF fine).
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary

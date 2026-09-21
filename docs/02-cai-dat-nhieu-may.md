@@ -6,14 +6,15 @@
 
 ```bash
 git clone https://github.com/<you>/agy-harness ~/agy-harness
-sh ~/agy-harness/install.sh
+node ~/agy-harness/install.js          # mọi OS
+# hoặc wrapper tự clone: sh install.sh (macOS/Linux) · install.ps1 (Windows)
 ```
 - agy đọc plugin **trực tiếp từ bản clone** (không copy) qua `~/.gemini/config/plugins.json`.
 - Cập nhật: `git -C ~/agy-harness pull` → có hiệu lực ngay ở phiên mới; phiên đang mở gõ `/skills reload`.
 - Sửa skill tại chỗ rồi commit/push từ chính thư mục đó.
 - Pin phiên bản: `git -C ~/agy-harness checkout v0.1.0`.
 
-Đặt thư mục khác: `AGY_HARNESS_DIR=/opt/agy-harness sh install.sh` (khi script phải tự clone).
+Đặt thư mục khác: `node install.js --dir /opt/agy-harness`, hoặc `AGY_HARNESS_DIR=... sh install.sh` khi wrapper phải tự clone.
 
 ### Cách B — `agy plugin install` (máy ít chỉnh sửa, đồng nghiệp)
 
@@ -22,7 +23,7 @@ agy plugin install ~/agy-harness            # bulk: cài tất cả plugin trong
 agy plugin install ~/agy-harness/plugins/hx-core   # chỉ 1 plugin
 agy plugin install https://github.com/<you>/agy-harness   # từ git (theo changelog agy; chưa test trong repo này)
 ```
-hoặc `sh install.sh --copy`.
+hoặc `node install.js --copy`.
 - Copy vào `~/.gemini/config/plugins/<name>/`. Cập nhật = chạy lại `install` (thay thế nguyên thư mục).
 - Lưu ý quan sát trên 1.2.6: sau bulk install, `agy plugin list` chỉ ghi nhận plugin cuối cùng
   trong "imports", nhưng cả 4 đều có trên đĩa và `/plugins` trong TUI hiện đủ.
@@ -56,21 +57,42 @@ Quy trình đổi máy: `/hx-core:handoff` → commit/push → máy kia pull →
 
 ## Windows
 
-`install.sh` là POSIX sh; trên Windows dùng Git Bash/WSL hoặc tự ghi
-`%USERPROFILE%\.gemini\config\plugins.json`. Hooks là Node nên chạy được; đường dẫn `~/` trong
-`plugins.json` được agy resolve trên mọi hệ điều hành.
+Cài Antigravity CLI cho Windows, Node.js ≥ 18, Git. Rồi trong PowerShell:
+```powershell
+git clone https://github.com/<you>/agy-harness $HOME\agy-harness
+node $HOME\agy-harness\install.js
+# hoặc: powershell -ExecutionPolicy Bypass -File $HOME\agy-harness\install.ps1
+```
+- Config nằm ở `%USERPROFILE%\.gemini\config\plugins.json`; `install.js` ghi đường dẫn tuyệt đối
+  (`C:\\Users\\you\\agy-harness\\plugins`).
+- Hooks: agy chạy `cmd /c node ./hooks/<x>.js` trong thư mục plugin — Node xử lý `./` bình thường.
+  Cần `node` có trong PATH của tiến trình agy (mở terminal mới sau khi cài Node).
+- Guard có sẵn pattern cho `cmd`/PowerShell: `rmdir /s` gốc ổ đĩa, `format C:`, `diskpart`,
+  `Remove-Item -Recurse` gốc/home (deny); `del /s`, `Remove-Item -Recurse`, `irm … | iex`,
+  `reg delete`… (ask).
+- Skills nhắc dùng `mvnw.cmd` / `gradlew.bat`. Rule `hx-core` yêu cầu agent kiểm tra OS trước khi
+  viết lệnh shell.
+- Trạng thái `.agents/state/` và `last_conversations.json` dùng đường dẫn Windows; hooks so sánh
+  bằng `path` của Node nên không cần chỉnh.
+- Chưa có máy Windows để chạy e2e trong repo này; cùng code Node đã chạy trên macOS và Linux.
+  Nếu gặp lỗi, chạy `node scripts\test-hooks.js` và `node scripts\e2e.js` rồi gửi output.
+
+## Linux
+
+Giống macOS: `node install.js`. Đã kiểm tra hook tests + installer trong container `node:18`/`node:22`
+(Debian). Nếu agy cài qua script chính thức, `agy` nằm ở `~/.local/bin` — đảm bảo có trong PATH.
 
 ## Gỡ
 
 ```bash
-sh ~/agy-harness/uninstall.sh   # bỏ entry trong plugins.json + agy plugin uninstall hx-* nếu đã copy
-rm -rf ~/agy-harness            # nếu muốn
+node ~/agy-harness/install.js --uninstall   # bỏ entry trong plugins.json + agy plugin uninstall hx-* nếu đã copy
+rm -rf ~/agy-harness                        # nếu muốn
 ```
 
 ## Checklist máy mới
 
 1. Cài `agy`, đăng nhập (`agy`).
 2. Cài Node ≥ 18.
-3. `git clone … ~/agy-harness && sh ~/agy-harness/install.sh`.
-4. `sh ~/agy-harness/scripts/e2e.sh` → `E2E OK`.
+3. `git clone … ~/agy-harness && node ~/agy-harness/install.js`.
+4. `node ~/agy-harness/scripts/e2e.js` → `E2E OK`.
 5. (Tuỳ chọn) `agy plugin disable <plugin không cần>`.

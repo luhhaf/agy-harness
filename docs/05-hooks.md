@@ -1,8 +1,9 @@
 # 05 · Hooks (hx-guard)
 
-Hook = lệnh shell agy chạy tại các điểm trong vòng lặp agent. Nhận JSON qua **stdin**, trả JSON
-qua **stdout** (key camelCase), CWD = thư mục chứa `hooks.json` (tức `plugins/hx-guard/`),
-timeout 10 s, chạy đồng bộ. Script viết bằng Node ≥ 18, không dependency, mỗi script có test.
+Hook = lệnh shell agy chạy tại các điểm trong vòng lặp agent (`sh -c` trên macOS/Linux,
+`cmd /c` trên Windows). Nhận JSON qua **stdin**, trả JSON qua **stdout** (key camelCase),
+CWD = thư mục chứa `hooks.json` (tức `plugins/hx-guard/`), timeout 10 s, chạy đồng bộ.
+Script viết bằng Node ≥ 18, không dependency, chạy y hệt trên 3 OS, mỗi script có test.
 
 | Hook | Event | Matcher | Script | Hành vi |
 |---|---|---|---|---|
@@ -17,17 +18,19 @@ Mẫu trong `hooks/patterns.json` (regex, không phân biệt hoa thường):
 
 **deny** (chặn cứng, agent nhận thông báo lỗi có mã `[hx-guard:<id>]`):
 `rm -rf /`, `rm -rf ~`, `rm -rf /*`, `git push --force … main|master` (cả 2 thứ tự), `git reset --hard (origin/)main|master`,
-`DROP DATABASE|SCHEMA`, `mkfs`, `dd … of=/dev/…`.
+`DROP DATABASE|SCHEMA`, `mkfs`, `dd … of=/dev/…`; Windows: `rmdir /s` gốc ổ đĩa, `format C:`,
+`diskpart`, `Remove-Item -Recurse` gốc ổ/home.
 
 **ask** (hỏi bạn; trong print mode = từ chối và ghi vào `denied_actions`):
 `git push --force` (nhánh khác), `rm -rf <path>`, `curl|wget … | sh|bash`, `git clean -f`, `DROP|TRUNCATE TABLE`,
-`sudo`, `chmod 777`.
+`sudo`, `chmod 777`; Windows: `del /s`, `rmdir /s`, `Remove-Item -Recurse`, `irm|iwr … | iex`,
+`reg delete`, `takeown|icacls /t`.
 
 Với lệnh chỉ-đọc (`grep`, `rg`, `echo`, `cat`, …) phần trong dấu nháy được bỏ qua, nên
 `grep -r "rm -rf" docs/` không bị chặn; nhưng `sh -c "rm -rf /"` vẫn bị deny.
 
 Thêm mẫu: sửa `patterns.json`, thêm test vào `hooks/__tests__/pre-tool-guard.test.js`, chạy
-`sh scripts/test-hooks.sh`.
+`node scripts/test-hooks.js`.
 
 Output nâng cao (chưa dùng, agy hỗ trợ): `"overwrite": {"CommandLine": "..."}` để sửa lệnh trước
 khi chạy; `"permissionOverrides": ["command(npm test)"]`.

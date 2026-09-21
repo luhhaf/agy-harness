@@ -11,18 +11,19 @@ Dùng được trên nhiều máy: clone repo, chạy `install.sh`, xong.
 | `hx-agents` | 5 subagent: `explorer`, `planner`, `executor`, `reviewer`, `verifier` | ✔ |
 | `hx-guard` | Hooks: chặn lệnh nguy hiểm, nhắc formatter, bơm notepad/goal mỗi lượt, giữ agent làm tới khi goal được verify | ✔ |
 
-## Cài nhanh
+## Cài nhanh (macOS · Linux · Windows)
 
 ```bash
 git clone https://github.com/<you>/agy-harness ~/agy-harness
-sh ~/agy-harness/install.sh          # đăng ký vào ~/.gemini/config/plugins.json
+node ~/agy-harness/install.js        # đăng ký vào ~/.gemini/config/plugins.json (mọi OS)
 agy                                  # gõ /plugins để kiểm tra, /skills để xem skill
 ```
+Wrapper tuỳ OS (tự clone nếu chưa có): `sh install.sh` (macOS/Linux) · `powershell -ExecutionPolicy Bypass -File install.ps1` (Windows).
 
-Cập nhật: `git -C ~/agy-harness pull`. Gỡ: `sh ~/agy-harness/uninstall.sh`.
+Cập nhật: `git -C ~/agy-harness pull`. Gỡ: `node ~/agy-harness/install.js --uninstall`.
 Tắt plugin không cần: `agy plugin disable hx-guard`.
 
-Yêu cầu: `agy` ≥ 1.2.6, Node.js ≥ 18 (cho hooks), `python3` (cho script cài đặt).
+Yêu cầu: `agy` ≥ 1.2.6, Node.js ≥ 18, git. Không cần Python hay bash trên Windows.
 
 ## Dùng hằng ngày
 
@@ -50,10 +51,11 @@ Yêu cầu: `agy` ≥ 1.2.6, Node.js ≥ 18 (cho hooks), `python3` (cho script c
 ## Kiểm thử
 
 ```bash
-sh scripts/validate-all.sh     # agy plugin validate cho từng plugin
-sh scripts/test-hooks.sh       # node --test cho hooks (không cần agy)
-sh scripts/e2e.sh              # kiểm tra agy phát hiện skill/hook (không tốn quota)
-sh scripts/e2e.sh --full       # + 3 lượt model thật (tốn quota)
+node scripts/validate-all.js   # agy plugin validate cho từng plugin
+node scripts/test-hooks.js     # node --test cho hooks (không cần agy)
+node scripts/e2e.js            # kiểm tra agy phát hiện skill/hook (không tốn quota)
+node scripts/e2e.js --full     # + 3 lượt model thật (tốn quota)
 ```
+Đã chạy trên macOS (đầy đủ) và Linux (Docker: hook tests + installer). Windows: cùng code Node, xem [docs/02](docs/02-cai-dat-nhieu-may.md#windows).
 
 License: MIT

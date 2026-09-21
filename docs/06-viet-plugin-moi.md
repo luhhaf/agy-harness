@@ -92,7 +92,7 @@ Nếu thấy `unknown component: tool "<x>" not found in registry` → bỏ tool
 2. Khai báo trong `hooks.json` (PreToolUse/PostToolUse cần `matcher` + `hooks`; các event khác
    là danh sách phẳng).
 3. Viết test trong `hooks/__tests__/<name>.test.js` (dùng `helpers.runHook` để chạy qua stdin/stdout
-   đúng như agy). `sh scripts/test-hooks.sh`.
+   đúng như agy). `node scripts/test-hooks.js`.
 4. Kiểm tra agy nạp: `agy -p "/hooks" --output-format json`.
 
 Nguyên tắc: không bao giờ crash (luôn exit 0, stdout là JSON hợp lệ), không phụ thuộc CWD,
@@ -108,7 +108,7 @@ timeout ≤ 10 s, không sửa file trong PostToolUse trừ khi người dùng �
 
 ## Quy trình phát hành
 
-1. `sh scripts/validate-all.sh && sh scripts/test-hooks.sh && sh scripts/e2e.sh`.
+1. `node scripts/validate-all.js && node scripts/test-hooks.js && node scripts/e2e.js`.
 2. Tăng `version` trong `plugin.json` của plugin thay đổi; ghi `CHANGELOG.md`.
 3. `git tag v0.x.y && git push --tags`.
 4. Máy khác: `git -C ~/agy-harness pull` (hoặc `checkout v0.x.y`).

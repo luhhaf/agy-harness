@@ -24,7 +24,8 @@ metadata:
    `Makefile` targets; `package.json` scripts (`test`, `lint`, `build`,
    `typecheck`); Maven `./mvnw -q verify` (or `mvn -q test`); Gradle
    `./gradlew check`; Python `pytest -q` + `ruff check .`; Go
-   `go build ./... && go test ./...`. Prefer the project's own wrapper scripts.
+   `go build ./... && go test ./...`. Prefer the project's own wrapper scripts
+   (`./mvnw` / `./gradlew` on macOS and Linux, `mvnw.cmd` / `gradlew.bat` on Windows).
 2. **Run them.** Use `run_command` and wait for each one to finish.
    You may delegate to the `verifier` subagent when the checks are slow or
    there are many.

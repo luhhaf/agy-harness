@@ -6,17 +6,19 @@
 |---|---|---|
 | Antigravity CLI | 1.2.6 | `agy --version` |
 | Node.js (hooks của `hx-guard`) | 18 | `node --version` |
-| python3 (script `install.sh`, `e2e.sh`) | 3.8 | `python3 --version` |
 | git | bất kỳ | `git --version` |
+
+Hỗ trợ macOS, Linux, Windows. Mọi script là Node.js — không cần Python, bash hay WSL.
 
 ## 2. Cài đặt (máy đầu tiên hoặc máy mới đều giống nhau)
 
 ```bash
 git clone https://github.com/<you>/agy-harness ~/agy-harness
-sh ~/agy-harness/install.sh
+node ~/agy-harness/install.js
 ```
+(Windows PowerShell: `git clone https://github.com/<you>/agy-harness $HOME\agy-harness; node $HOME\agy-harness\install.js`)
 
-`install.sh` làm 3 việc:
+`install.js` làm 3 việc:
 1. Tìm thư mục `plugins/` của repo.
 2. Ghi (hoặc bổ sung) `~/.gemini/config/plugins.json`:
    ```json
@@ -36,7 +38,7 @@ agy
 Hoặc không cần mở TUI (không tốn quota):
 
 ```bash
-sh ~/agy-harness/scripts/e2e.sh
+node ~/agy-harness/scripts/e2e.js
 ```
 
 ## 3. Phiên làm việc đầu tiên
@@ -92,6 +94,6 @@ Lựa chọn được lưu ở `~/.gemini/config/config.json`, không đụng v�
 ## 6. Cập nhật / gỡ
 
 ```bash
-git -C ~/agy-harness pull            # cập nhật; trong agy gõ /skills reload nếu đang mở
-sh ~/agy-harness/uninstall.sh        # gỡ đăng ký (không xoá thư mục clone)
+git -C ~/agy-harness pull                    # cập nhật; trong agy gõ /skills reload nếu đang mở
+node ~/agy-harness/install.js --uninstall    # gỡ đăng ký (không xoá thư mục clone)
 ```

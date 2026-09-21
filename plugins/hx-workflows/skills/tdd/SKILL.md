@@ -25,8 +25,8 @@ metadata:
    convention of the project (`find_by_name` for `*Test.java`, `*.test.ts`,
    `test_*.py`, `*_test.go`).
 2. **RED.** Write one test that describes the behaviour. Run only that test:
-   - Maven: `./mvnw -q test -Dtest=ClassName#method` (or `mvn`)
-   - Gradle: `./gradlew test --tests 'pkg.ClassName.method'`
+   - Maven: `./mvnw -q test -Dtest=ClassName#method` (Windows: `mvnw.cmd`; or `mvn`)
+   - Gradle: `./gradlew test --tests 'pkg.ClassName.method'` (Windows: `gradlew.bat`)
    - Node: `npx vitest run <file>` / `npx jest <file>`
    - Python: `pytest path::test_name -q`
    - Go: `go test ./pkg -run TestName`

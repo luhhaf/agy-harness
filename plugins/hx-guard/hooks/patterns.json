@@ -1,21 +1,131 @@
 {
   "deny": [
-    { "id": "rm-root",        "regex": "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\\s+(/|~|\\$HOME)(\\s|$|[\"';&|)])", "reason": "Deleting the root or home directory is not allowed." },
-    { "id": "rm-root-star",   "regex": "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\\s+/\\*", "reason": "Deleting everything under / is not allowed." },
-    { "id": "force-push-main","regex": "\\bgit\\s+push\\b[^\\n]*(--force|-f)\\b[^\\n]*\\b(main|master)\\b", "reason": "Force-pushing to main/master is not allowed." },
-    { "id": "force-push-main2","regex": "\\bgit\\s+push\\b[^\\n]*\\b(main|master)\\b[^\\n]*(--force|-f)\\b", "reason": "Force-pushing to main/master is not allowed." },
-    { "id": "reset-hard-main","regex": "\\bgit\\s+reset\\s+--hard\\s+(origin/)?(main|master)\\b", "reason": "Hard reset to main/master destroys local work. Ask the user." },
-    { "id": "drop-database",  "regex": "\\bDROP\\s+(DATABASE|SCHEMA)\\b", "reason": "Dropping a database/schema is not allowed from the agent." },
-    { "id": "mkfs",           "regex": "\\bmkfs(\\.|\\s)", "reason": "Formatting a filesystem is not allowed." },
-    { "id": "dd-disk",        "regex": "\\bdd\\s+[^\\n]*of=/dev/", "reason": "Writing raw data to a device is not allowed." }
+    {
+      "id": "rm-root",
+      "regex": "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\\s+(/|~|\\$HOME)(\\s|$|[\"';&|)])",
+      "reason": "Deleting the root or home directory is not allowed."
+    },
+    {
+      "id": "rm-root-star",
+      "regex": "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\\s+/\\*",
+      "reason": "Deleting everything under / is not allowed."
+    },
+    {
+      "id": "force-push-main",
+      "regex": "\\bgit\\s+push\\b[^\\n]*(--force|-f)\\b[^\\n]*\\b(main|master)\\b",
+      "reason": "Force-pushing to main/master is not allowed."
+    },
+    {
+      "id": "force-push-main2",
+      "regex": "\\bgit\\s+push\\b[^\\n]*\\b(main|master)\\b[^\\n]*(--force|-f)\\b",
+      "reason": "Force-pushing to main/master is not allowed."
+    },
+    {
+      "id": "reset-hard-main",
+      "regex": "\\bgit\\s+reset\\s+--hard\\s+(origin/)?(main|master)\\b",
+      "reason": "Hard reset to main/master destroys local work. Ask the user."
+    },
+    {
+      "id": "drop-database",
+      "regex": "\\bDROP\\s+(DATABASE|SCHEMA)\\b",
+      "reason": "Dropping a database/schema is not allowed from the agent."
+    },
+    {
+      "id": "mkfs",
+      "regex": "\\bmkfs(\\.|\\s)",
+      "reason": "Formatting a filesystem is not allowed."
+    },
+    {
+      "id": "dd-disk",
+      "regex": "\\bdd\\s+[^\\n]*of=/dev/",
+      "reason": "Writing raw data to a device is not allowed."
+    },
+    {
+      "id": "win-rd-root",
+      "regex": "\\b(rd|rmdir)\\b[^\\n]*\\/s\\b[^\\n]*\\s([a-zA-Z]:\\\\?|\\\\)(\\s|$|[\"'&|])",
+      "reason": "Deleting a drive root is not allowed."
+    },
+    {
+      "id": "win-format",
+      "regex": "\\bformat(\\.com)?\\s+[a-zA-Z]:",
+      "reason": "Formatting a drive is not allowed."
+    },
+    {
+      "id": "ps-remove-root",
+      "regex": "\\b(Remove-Item|ri|rm|del|erase)\\b[^\\n]*-Recurse[^\\n]*\\s([a-zA-Z]:\\\\?|\\$HOME|\\$env:USERPROFILE|~)(\\s|$|[\"'&|])",
+      "reason": "Deleting a drive root or the home directory is not allowed."
+    },
+    {
+      "id": "win-diskpart",
+      "regex": "\\bdiskpart\\b",
+      "reason": "Disk partitioning is not allowed."
+    }
   ],
   "ask": [
-    { "id": "force-push",     "regex": "\\bgit\\s+push\\b[^\\n]*(--force|-f)\\b", "reason": "Force push rewrites remote history." },
-    { "id": "rm-rf",          "regex": "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\\b", "reason": "Recursive delete. Please confirm the path." },
-    { "id": "pipe-to-shell",  "regex": "\\b(curl|wget)\\b[^\\n]*\\|\\s*(sudo\\s+)?(sh|bash|zsh)\\b", "reason": "Piping a download into a shell runs unreviewed code." },
-    { "id": "git-clean",      "regex": "\\bgit\\s+clean\\s+[^\\n]*-[a-zA-Z]*f", "reason": "git clean -f deletes untracked files." },
-    { "id": "drop-table",     "regex": "\\bDROP\\s+TABLE\\b|\\bTRUNCATE\\s+TABLE\\b", "reason": "Destructive SQL statement." },
-    { "id": "sudo",           "regex": "\\bsudo\\b", "reason": "Command needs root privileges." },
-    { "id": "chmod-777",      "regex": "\\bchmod\\s+(-R\\s+)?777\\b", "reason": "World-writable permissions are unsafe." }
+    {
+      "id": "force-push",
+      "regex": "\\bgit\\s+push\\b[^\\n]*(--force|-f)\\b",
+      "reason": "Force push rewrites remote history."
+    },
+    {
+      "id": "rm-rf",
+      "regex": "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\\b",
+      "reason": "Recursive delete. Please confirm the path."
+    },
+    {
+      "id": "pipe-to-shell",
+      "regex": "\\b(curl|wget)\\b[^\\n]*\\|\\s*(sudo\\s+)?(sh|bash|zsh)\\b",
+      "reason": "Piping a download into a shell runs unreviewed code."
+    },
+    {
+      "id": "git-clean",
+      "regex": "\\bgit\\s+clean\\s+[^\\n]*-[a-zA-Z]*f",
+      "reason": "git clean -f deletes untracked files."
+    },
+    {
+      "id": "drop-table",
+      "regex": "\\bDROP\\s+TABLE\\b|\\bTRUNCATE\\s+TABLE\\b",
+      "reason": "Destructive SQL statement."
+    },
+    {
+      "id": "sudo",
+      "regex": "\\bsudo\\b",
+      "reason": "Command needs root privileges."
+    },
+    {
+      "id": "chmod-777",
+      "regex": "\\bchmod\\s+(-R\\s+)?777\\b",
+      "reason": "World-writable permissions are unsafe."
+    },
+    {
+      "id": "win-rd-s",
+      "regex": "\\b(rd|rmdir)\\b[^\\n]*\\/s\\b",
+      "reason": "Recursive delete (rmdir /s). Please confirm the path."
+    },
+    {
+      "id": "win-del-s",
+      "regex": "\\b(del|erase)\\b[^\\n]*\\/s\\b",
+      "reason": "Recursive delete (del /s). Please confirm the path."
+    },
+    {
+      "id": "ps-remove-recurse",
+      "regex": "\\b(Remove-Item|ri)\\b[^\\n]*-Recurse",
+      "reason": "Recursive delete (Remove-Item -Recurse). Please confirm the path."
+    },
+    {
+      "id": "ps-iex-download",
+      "regex": "\\b(iwr|Invoke-WebRequest|irm|Invoke-RestMethod)\\b[^\\n]*\\|\\s*(iex|Invoke-Expression)\\b",
+      "reason": "Piping a download into Invoke-Expression runs unreviewed code."
+    },
+    {
+      "id": "win-reg-delete",
+      "regex": "\\breg\\s+delete\\b",
+      "reason": "Registry deletion."
+    },
+    {
+      "id": "win-takeown-icacls",
+      "regex": "\\b(takeown|icacls)\\b[^\\n]*\\/(r|t)\\b",
+      "reason": "Recursive ownership/permission change."
+    }
   ]
 }

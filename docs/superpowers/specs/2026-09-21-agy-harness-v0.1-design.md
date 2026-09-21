@@ -11,6 +11,7 @@ on many machines via `git clone` + `~/.gemini/config/plugins.json` or
 ## Decisions (from brainstorming)
 - Scope v0.1: 4 plugins — `hx-core`, `hx-workflows`, `hx-agents`, `hx-guard`.
 - Hook scripts: Node.js ≥ 18, stdlib only, tested with `node --test`.
+- Must run on macOS, Linux and Windows: all repo scripts are Node (`install.js`, `scripts/*.js`); `install.sh`/`install.ps1` are thin clone-then-run wrappers. No Python/bash requirement.
 - Skill/rule text: simple English (B1). User docs: Vietnamese.
 - Example stack in docs: Java / Spring. Stack plugins are out of scope (template only).
 - Plugin name = directory name, prefix `hx-`, regex `^[a-z0-9]+(-[a-z0-9]+)*$`.

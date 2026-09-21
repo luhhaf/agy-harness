@@ -26,7 +26,7 @@ Tool bổ sung custom agent được phép khai báo: `grep_search, find_by_name
 
 **Không tồn tại** (gây lỗi "unknown component: tool X not found in registry" khi khởi tạo
 subagent): `command_status`, `multi_replace_file_content`, `codebase_search`, `edit_file`.
-Nếu bạn thêm tool mới, test bằng một lượt thật (`scripts/e2e.sh --full` hoặc thủ công) — tên sai
+Nếu bạn thêm tool mới, test bằng một lượt thật (`node scripts/e2e.js --full` hoặc thủ công) — tên sai
 không làm treo mà báo lỗi ngay, nhưng subagent sẽ không chạy.
 
 Tên tool trong **hook matcher** (PreToolUse/PostToolUse) là tên tool call thực tế, đã đo được:

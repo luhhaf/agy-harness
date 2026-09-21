@@ -30,7 +30,14 @@ These rules are always on. Follow them in every task.
 - Match the style of the code around you. Do not add comments or docs that the
   code does not need.
 
-## 6. Delegate when it helps
+## 6. Match the operating system
+- Check the OS before writing shell commands (Windows uses `cmd`/PowerShell:
+  `mvnw.cmd`, `gradlew.bat`, `dir`, `Remove-Item`; macOS/Linux use `sh`).
+- Prefer cross-platform commands (`node`, `npm`, `git`, `python`) when possible.
+- Use forward slashes in paths inside config files and scripts unless a tool
+  requires Windows paths.
+
+## 7. Delegate when it helps
 - Use `invoke_subagent` for parallel or read-heavy work:
   `explorer` to map code, `reviewer` to review a diff, `verifier` to run checks.
 - Give the subagent a clear goal, the files it needs, and what to return.
