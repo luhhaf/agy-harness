@@ -1,0 +1,21 @@
+{
+  "deny": [
+    { "id": "rm-root",        "regex": "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\\s+(/|~|\\$HOME)(\\s|$|[\"';&|)])", "reason": "Deleting the root or home directory is not allowed." },
+    { "id": "rm-root-star",   "regex": "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\\s+/\\*", "reason": "Deleting everything under / is not allowed." },
+    { "id": "force-push-main","regex": "\\bgit\\s+push\\b[^\\n]*(--force|-f)\\b[^\\n]*\\b(main|master)\\b", "reason": "Force-pushing to main/master is not allowed." },
+    { "id": "force-push-main2","regex": "\\bgit\\s+push\\b[^\\n]*\\b(main|master)\\b[^\\n]*(--force|-f)\\b", "reason": "Force-pushing to main/master is not allowed." },
+    { "id": "reset-hard-main","regex": "\\bgit\\s+reset\\s+--hard\\s+(origin/)?(main|master)\\b", "reason": "Hard reset to main/master destroys local work. Ask the user." },
+    { "id": "drop-database",  "regex": "\\bDROP\\s+(DATABASE|SCHEMA)\\b", "reason": "Dropping a database/schema is not allowed from the agent." },
+    { "id": "mkfs",           "regex": "\\bmkfs(\\.|\\s)", "reason": "Formatting a filesystem is not allowed." },
+    { "id": "dd-disk",        "regex": "\\bdd\\s+[^\\n]*of=/dev/", "reason": "Writing raw data to a device is not allowed." }
+  ],
+  "ask": [
+    { "id": "force-push",     "regex": "\\bgit\\s+push\\b[^\\n]*(--force|-f)\\b", "reason": "Force push rewrites remote history." },
+    { "id": "rm-rf",          "regex": "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\\b", "reason": "Recursive delete. Please confirm the path." },
+    { "id": "pipe-to-shell",  "regex": "\\b(curl|wget)\\b[^\\n]*\\|\\s*(sudo\\s+)?(sh|bash|zsh)\\b", "reason": "Piping a download into a shell runs unreviewed code." },
+    { "id": "git-clean",      "regex": "\\bgit\\s+clean\\s+[^\\n]*-[a-zA-Z]*f", "reason": "git clean -f deletes untracked files." },
+    { "id": "drop-table",     "regex": "\\bDROP\\s+TABLE\\b|\\bTRUNCATE\\s+TABLE\\b", "reason": "Destructive SQL statement." },
+    { "id": "sudo",           "regex": "\\bsudo\\b", "reason": "Command needs root privileges." },
+    { "id": "chmod-777",      "regex": "\\bchmod\\s+(-R\\s+)?777\\b", "reason": "World-writable permissions are unsafe." }
+  ]
+}

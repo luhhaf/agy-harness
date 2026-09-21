@@ -1,0 +1,9 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "hx-agents",
+  "version": "0.1.0",
+  "description": "Specialist subagents for the harness: explorer, planner, executor, reviewer, verifier.",
+  "author": { "name": "luatnq" },
+  "license": "MIT",
+  "keywords": ["antigravity", "subagents"]
+}

@@ -1,0 +1,4 @@
+.omc/
+.agents/state/
+node_modules/
+*.log

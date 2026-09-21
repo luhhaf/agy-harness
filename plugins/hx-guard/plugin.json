@@ -1,0 +1,9 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "hx-guard",
+  "version": "0.1.0",
+  "description": "Safety and persistence hooks: block dangerous commands, inject notepad/goal context, keep the agent going until the goal is verified.",
+  "author": { "name": "luatnq" },
+  "license": "MIT",
+  "keywords": ["antigravity", "hooks", "safety"]
+}

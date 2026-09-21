@@ -1,0 +1,32 @@
+{
+  "hx-pre-tool-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          { "type": "command", "command": "node ./hooks/pre-tool-guard.js", "timeout": 10 }
+        ]
+      }
+    ]
+  },
+  "hx-post-tool-lint": {
+    "PostToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          { "type": "command", "command": "node ./hooks/post-tool-lint.js", "timeout": 10 }
+        ]
+      }
+    ]
+  },
+  "hx-pre-invocation-context": {
+    "PreInvocation": [
+      { "type": "command", "command": "node ./hooks/pre-invocation-context.js", "timeout": 10 }
+    ]
+  },
+  "hx-stop-gate": {
+    "Stop": [
+      { "type": "command", "command": "node ./hooks/stop-gate.js", "timeout": 10 }
+    ]
+  }
+}

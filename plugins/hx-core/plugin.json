@@ -1,0 +1,9 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "hx-core",
+  "version": "0.1.0",
+  "description": "Harness foundation: always-on working rules, tool map for agy, notepad and handoff skills.",
+  "author": { "name": "luatnq" },
+  "license": "MIT",
+  "keywords": ["antigravity", "harness", "rules"]
+}

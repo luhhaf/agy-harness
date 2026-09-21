@@ -1,0 +1,8 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "hx-stack-CHANGEME",
+  "version": "0.1.0",
+  "description": "Rules and skills for the CHANGEME stack.",
+  "author": { "name": "you" },
+  "license": "MIT"
+}

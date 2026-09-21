@@ -1,0 +1,93 @@
+# 01 · Kiến trúc
+
+## Cách agy nạp customization (tóm tắt những gì đã kiểm chứng)
+
+```
+~/.gemini/config/                      ← GLOBAL (mọi workspace)
+├── plugins.json      {"entries":[{"path":"~/agy-harness/plugins"}]}   ← install.sh ghi ở đây
+├── plugins/<name>/   ← nơi `agy plugin install` copy vào (cách B)
+├── config.json       {"plugins":{"hx-guard":{"enabled":false}}}        ← trạng thái bật/tắt theo máy
+└── mcp_config.json, hooks.json, skills/, agents/
+
+<repo dự án>/.agents/                  ← WORKSPACE (commit chung với team)
+├── skills/, agents/, rules/, hooks.json, plugins/, plugins.json
+└── state/            ← agy-harness dùng: notepad.md, goal.json, handoff.md (gitignore)
+
+~/.gemini/antigravity-cli/             ← riêng CLI: settings.json, logs, builtin skills
+```
+
+Ưu tiên khi trùng tên: workspace > `skills.json`/`plugins.json` workspace > global > built-in.
+
+Một plugin = thư mục có `plugin.json`; agy tự nạp `skills/`, `agents/`, `rules/`, `commands/`,
+`hooks.json`, `mcp_config.json` bên trong. Repo này đặt tất cả plugin trong `plugins/`; agy nhận
+diện đây là **bulk plugins directory** khi `agy plugin install <repo>`.
+
+## Các plugin và cách chúng ghép với nhau
+
+```
+                ┌──────────── hx-core ────────────┐
+                │ rules/AGENTS.md (always-on)     │  "dùng skill trước, task artifact,
+                │ skills: using-harness, notepad, │   verify trước khi nói xong"
+                │         handoff                 │
+                └───────────────┬─────────────────┘
+                                │ đọc/ghi .agents/state/*
+   ┌──────── hx-workflows ──────┴──────────┐      ┌──────── hx-agents ────────┐
+   │ brainstorm → plan → tdd → review →    │ ───▶ │ explorer  (flash, read)   │
+   │ verify → ship                         │ gọi  │ planner   (pro,   read)   │
+   │ plan ghi goal.json; verify đóng nó    │      │ executor  (inherit, write)│
+   └──────────────────┬────────────────────┘      │ reviewer  (pro,   read)   │
+                      │                            │ verifier  (inherit, run)  │
+                      ▼                            └───────────────────────────┘
+   ┌──────────────── hx-guard (hooks) ─────────────────────────────────────────┐
+   │ PreToolUse  run_command   → pre-tool-guard.js   deny / ask                │
+   │ PostToolUse write/replace → post-tool-lint.js   nhắc formatter (stderr)   │
+   │ PreInvocation             → pre-invocation-context.js  bơm notepad + goal │
+   │ Stop                      → stop-gate.js        goal chưa done → continue │
+   └────────────────────────────────────────────────────────────────────────────┘
+```
+
+Mỗi plugin **độc lập**: tắt `hx-agents` thì skill `review` tự làm review thay vì gọi subagent
+(skill có nhánh "nếu không có subagent"). Tắt `hx-guard` thì mất chặn lệnh và vòng lặp goal,
+nhưng workflow vẫn chạy.
+
+## Luồng dữ liệu qua `.agents/state/`
+
+| File | Ai ghi | Ai đọc |
+|---|---|---|
+| `notepad.md` | skill `notepad`, `brainstorm` (decisions), bạn | hook `pre-invocation-context` (mục **Priority**), skill `handoff` |
+| `goal.json` | skill `plan` (tạo), `verify` (đóng), hook `stop-gate` (đếm `continues`) | hook `pre-invocation-context`, `stop-gate`, skill `verify`, `ship` |
+| `handoff.md` | skill `handoff` | bạn / phiên sau |
+
+`goal.json`:
+```json
+{
+  "active": true, "done": false,
+  "goal": "Add PDF export for orders",
+  "plan": "docs/plans/2026-09-21-pdf-export-plan.md",
+  "checks": ["./mvnw -q test", "./mvnw -q spotless:check"],
+  "continues": 0, "maxContinues": 5,
+  "updated": "2026-09-21T10:00"
+}
+```
+`.agents/state/` nằm trong **workspace** (không phải global) nên trạng thái đi theo dự án; mặc định
+gitignore, bạn có thể bỏ ignore nếu muốn đồng bộ notepad qua git giữa các máy.
+
+## Vì sao tách 4 plugin nhỏ thay vì 1
+
+- Bật/tắt theo máy hoặc theo dự án (`config.json` không nằm trong repo).
+- Thay hooks (Node) bằng cách khác mà không đụng skills.
+- Thêm plugin theo stack (`hx-stack-java-spring`…) mà không làm phình `hx-core`.
+- Ràng buộc: agent chỉ tham chiếu skill/agent bằng đường dẫn **trong cùng plugin**; giữa các plugin
+  gọi nhau bằng **tên** (`invoke_subagent` TypeName `reviewer`, slash `/hx-workflows:verify`).
+
+## Giới hạn đã biết của agy 1.2.6 (ảnh hưởng thiết kế)
+
+- Print mode (`agy -p`) gửi `workspacePaths: []` cho hook → hook tra ngược workspace qua
+  `<appData>/cache/last_conversations.json` bằng `conversationId`. Interactive gửi đủ.
+- Print mode không nạp `.agents/plugins.json` / `.agents/plugins/` của workspace (skill thường
+  `.agents/skills/` thì có). Vì vậy dogfood/CI dùng đăng ký global (`install.sh`).
+- `-p "/skills"` chỉ liệt kê skill global/built-in, không liệt kê skill workspace.
+- Hook chỉ `type: command`, chạy đồng bộ, CWD = thư mục chứa `hooks.json`.
+- Tên tool trong `agents/*.md` phải đúng registry; tên sai → subagent lỗi ngay khi khởi tạo
+  (ví dụ `command_status` không tồn tại). Danh sách đã kiểm chứng ở [04-agents.md](04-agents.md).
+- Không có todo tool; dùng task artifact (`write_to_file` + `IsArtifact: true`, `ArtifactType: "task"`).

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "hx-workflows",
+  "version": "0.1.0",
+  "description": "Development workflow skills: brainstorm, plan, tdd, debug, review, verify, ship.",
+  "author": { "name": "luatnq" },
+  "license": "MIT",
+  "keywords": ["antigravity", "workflow", "tdd", "review"]
+}
