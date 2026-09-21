@@ -21,7 +21,7 @@ node ~/agy-harness/install.js          # mọi OS
 ```bash
 agy plugin install ~/agy-harness            # bulk: cài tất cả plugin trong plugins/
 agy plugin install ~/agy-harness/plugins/hx-core   # chỉ 1 plugin
-agy plugin install https://github.com/luhhaf/agy-harness   # từ git (theo changelog agy; chưa test trong repo này)
+agy plugin install https://github.com/luhhaf/agy-harness   # từ git — đã test: clone + cài đủ 4 plugin
 ```
 hoặc `node install.js --copy`.
 - Copy vào `~/.gemini/config/plugins/<name>/`. Cập nhật = chạy lại `install` (thay thế nguyên thư mục).

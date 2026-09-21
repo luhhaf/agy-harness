@@ -74,5 +74,5 @@ echo "Done. Mở agy và gõ /plugins để kiểm tra; tắt plugin không cầ
 ```
 
 ## Việc còn mở
-- Chưa test `agy plugin install <git-url>` với repo thật (cần push repo public/private có auth). Changelog xác nhận tính năng và submodule; nên test ngay khi có remote.
+- `agy plugin install https://github.com/luhhaf/agy-harness` đã test 2026-09-21: agy clone, nhận bulk `plugins/`, cài đủ 4 plugin.
 - Xác nhận lại bug `agy plugin list` chỉ ghi 1 plugin khi bulk-install trên bản 1.2.7+.
