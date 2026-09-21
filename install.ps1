@@ -1,10 +1,10 @@
 # Windows wrapper (PowerShell 5+). Clones (or pulls) the repo if needed, then runs node install.js.
 #
 #   powershell -ExecutionPolicy Bypass -File install.ps1 [--copy]
-#   irm https://raw.githubusercontent.com/<you>/agy-harness/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/luhhaf/agy-harness/main/install.ps1 | iex
 param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Rest)
 $ErrorActionPreference = 'Stop'
-$RepoUrl = if ($env:AGY_HARNESS_REPO) { $env:AGY_HARNESS_REPO } else { 'https://github.com/<you>/agy-harness.git' }
+$RepoUrl = if ($env:AGY_HARNESS_REPO) { $env:AGY_HARNESS_REPO } else { 'https://github.com/luhhaf/agy-harness.git' }
 $SelfDir = if ($PSScriptRoot) { $PSScriptRoot } else { '' }
 if ($SelfDir -and (Test-Path (Join-Path $SelfDir 'install.js'))) {
   $Dir = $SelfDir

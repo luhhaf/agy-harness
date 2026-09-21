@@ -3,9 +3,9 @@
 # installer: node install.js. Windows users: run install.ps1 instead.
 #
 #   sh install.sh [--copy]                    from inside a clone
-#   curl -fsSL https://raw.githubusercontent.com/<you>/agy-harness/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/luhhaf/agy-harness/main/install.sh | sh
 set -eu
-REPO_URL="${AGY_HARNESS_REPO:-https://github.com/<you>/agy-harness.git}"
+REPO_URL="${AGY_HARNESS_REPO:-https://github.com/luhhaf/agy-harness.git}"
 SELF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd || echo "")"
 if [ -n "$SELF_DIR" ] && [ -f "$SELF_DIR/install.js" ]; then
   DIR="$SELF_DIR"

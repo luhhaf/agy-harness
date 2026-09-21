@@ -61,7 +61,7 @@ Quy ước: prefix ngắn thống nhất (`hx-`), mỗi plugin có `README.md` +
 #!/usr/bin/env sh
 set -e
 DIR="${AGY_HARNESS_DIR:-$HOME/agy-harness}"
-[ -d "$DIR/.git" ] && git -C "$DIR" pull --ff-only || git clone https://github.com/<you>/agy-harness "$DIR"
+[ -d "$DIR/.git" ] && git -C "$DIR" pull --ff-only || git clone https://github.com/luhhaf/agy-harness "$DIR"
 mkdir -p ~/.gemini/config
 CFG=~/.gemini/config/plugins.json
 if [ -f "$CFG" ]; then

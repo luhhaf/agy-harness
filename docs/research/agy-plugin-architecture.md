@@ -286,7 +286,7 @@ agy-harness/
 1. Viết skill/agent → `agy plugin validate plugins/<p>`.
 2. Dogfood qua `.agents/plugins.json` (không cần install).
 3. Test headless: `agy -p "/harness-workflows:plan <task>" --output-format json` trong CI (GitHub Actions dùng `GEMINI_API_KEY` + `modelProvider: gemini`).
-4. Phát hành: tag git; người dùng `agy plugin install https://github.com/<you>/agy-harness` (hoặc script cài từng plugin).
+4. Phát hành: tag git; người dùng `agy plugin install https://github.com/luhhaf/agy-harness` (hoặc script cài từng plugin).
 
 ---
 

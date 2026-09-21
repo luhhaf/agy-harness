@@ -14,7 +14,7 @@ Dùng được trên nhiều máy: clone repo, chạy `install.sh`, xong.
 ## Cài nhanh (macOS · Linux · Windows)
 
 ```bash
-git clone https://github.com/<you>/agy-harness ~/agy-harness
+git clone https://github.com/luhhaf/agy-harness ~/agy-harness
 node ~/agy-harness/install.js        # đăng ký vào ~/.gemini/config/plugins.json (mọi OS)
 agy                                  # gõ /plugins để kiểm tra, /skills để xem skill
 ```

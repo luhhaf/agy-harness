@@ -5,7 +5,7 @@
 ### Cách A — clone + đăng ký đường dẫn (khuyên dùng cho máy của bạn)
 
 ```bash
-git clone https://github.com/<you>/agy-harness ~/agy-harness
+git clone https://github.com/luhhaf/agy-harness ~/agy-harness
 node ~/agy-harness/install.js          # mọi OS
 # hoặc wrapper tự clone: sh install.sh (macOS/Linux) · install.ps1 (Windows)
 ```
@@ -21,7 +21,7 @@ node ~/agy-harness/install.js          # mọi OS
 ```bash
 agy plugin install ~/agy-harness            # bulk: cài tất cả plugin trong plugins/
 agy plugin install ~/agy-harness/plugins/hx-core   # chỉ 1 plugin
-agy plugin install https://github.com/<you>/agy-harness   # từ git (theo changelog agy; chưa test trong repo này)
+agy plugin install https://github.com/luhhaf/agy-harness   # từ git (theo changelog agy; chưa test trong repo này)
 ```
 hoặc `node install.js --copy`.
 - Copy vào `~/.gemini/config/plugins/<name>/`. Cập nhật = chạy lại `install` (thay thế nguyên thư mục).
@@ -59,7 +59,7 @@ Quy trình đổi máy: `/hx-core:handoff` → commit/push → máy kia pull →
 
 Cài Antigravity CLI cho Windows, Node.js ≥ 18, Git. Rồi trong PowerShell:
 ```powershell
-git clone https://github.com/<you>/agy-harness $HOME\agy-harness
+git clone https://github.com/luhhaf/agy-harness $HOME\agy-harness
 node $HOME\agy-harness\install.js
 # hoặc: powershell -ExecutionPolicy Bypass -File $HOME\agy-harness\install.ps1
 ```

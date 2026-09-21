@@ -13,10 +13,10 @@ Hỗ trợ macOS, Linux, Windows. Mọi script là Node.js — không cần Pyth
 ## 2. Cài đặt (máy đầu tiên hoặc máy mới đều giống nhau)
 
 ```bash
-git clone https://github.com/<you>/agy-harness ~/agy-harness
+git clone https://github.com/luhhaf/agy-harness ~/agy-harness
 node ~/agy-harness/install.js
 ```
-(Windows PowerShell: `git clone https://github.com/<you>/agy-harness $HOME\agy-harness; node $HOME\agy-harness\install.js`)
+(Windows PowerShell: `git clone https://github.com/luhhaf/agy-harness $HOME\agy-harness; node $HOME\agy-harness\install.js`)
 
 `install.js` làm 3 việc:
 1. Tìm thư mục `plugins/` của repo.
