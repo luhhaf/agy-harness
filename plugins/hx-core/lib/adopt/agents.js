@@ -45,6 +45,7 @@ function scan(root, ctx) {
     if (dropped.length) reasons.push(`dropped frontmatter ${dropped.join(', ')}`);
     if (!head.description) manual('description is required');
     if (unmapped.length) manual(`no agy tool for ${unmapped.join(', ')}`);
+    if (ctx.registry.hxAgents.includes(name)) manual(`shadows the hx-agents subagent ${name}; rename it or the project copy wins`);
     if (rw.leftovers.length) manual('tool names left in prose; see leftovers');
     it.reason = reasons.join('; ');
     out.push(it);

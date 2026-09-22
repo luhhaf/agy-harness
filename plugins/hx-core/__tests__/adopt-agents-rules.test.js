@@ -11,13 +11,13 @@ const ctx = () => ({ home: tmpProject({}), toolmap, registry: require('../lib/re
 
 test('agents: maps tools and model, adds agy keys, wraps body under # System Prompt', () => {
   const root = tmpProject({
-    '.claude/agents/reviewer.md': '---\nname: reviewer\ndescription: Reviews diffs\ntools: Read, Grep, Bash\nmodel: claude-opus-4-1\ncolor: red\npermissionMode: default\n---\nYou review code with the Read tool.\n',
+    '.claude/agents/code-reviewer.md': '---\nname: code-reviewer\ndescription: Reviews diffs\ntools: Read, Grep, Bash\nmodel: claude-opus-4-1\ncolor: red\npermissionMode: default\n---\nYou review code with the Read tool.\n',
   });
   const [it] = agents.scan(root, ctx());
   assert.equal(it.kind, 'agent');
-  assert.equal(it.target, '.agents/agents/reviewer.md');
+  assert.equal(it.target, '.agents/agents/code-reviewer.md');
   const fm = frontmatter(it.content);
-  assert.equal(fm.name, 'reviewer');
+  assert.equal(fm.name, 'code-reviewer');
   assert.deepEqual(fm.tools, ['view_file', 'grep_search', 'run_command']);
   assert.equal(fm.model, 'pro');
   assert.equal(fm.subagent, 'true');
@@ -100,4 +100,17 @@ test('rules: paths → glob trigger; none → always_on; oversize → manual', (
   const big = items.find((i) => /big\.md/.test(i.source));
   assert.equal(big.status, 'manual');
   assert.match(big.reason, /12000/);
+});
+
+test('agents: hxAgents collision (reviewer) → manual status; non-colliding agent → auto', () => {
+  const root = tmpProject({
+    '.claude/agents/reviewer.md': '---\nname: reviewer\ndescription: Reviews code\ntools: Read\n---\nReviews.\n',
+    '.claude/agents/custom-agent.md': '---\nname: custom-agent\ndescription: Custom\ntools: Read\n---\nCustom.\n',
+  });
+  const items = agents.scan(root, ctx());
+  const reviewerItem = items.find((i) => /reviewer\.md/.test(i.source));
+  assert.equal(reviewerItem.status, 'manual');
+  assert.match(reviewerItem.reason, /shadows the hx-agents subagent reviewer; rename it or the project copy wins/);
+  const customItem = items.find((i) => /custom-agent\.md/.test(i.source));
+  assert.equal(customItem.status, 'auto');
 });

@@ -75,10 +75,15 @@ Claude files stay untouched; `/hx-core:doctor` reports no errors afterwards.
 | `.claude/commands/**.md` | `.agents/skills/<n>/SKILL.md` | nested `a/b.md` → `a-b` |
 | `.claude/agents/*.md` | `.agents/agents/*.md` | tools mapped, `opus→pro`, `sonnet→inherit`, `haiku→flash` |
 | `.claude/rules/*.md` | `.agents/rules/*.md` | `paths:` → `trigger: glob` |
-| `.mcp.json` | `.agents/mcp_config.json` | verbatim |
+| `.mcp.json` | `.agents/mcp_config.json` | `mcpServers` copied; other top-level keys dropped; `${VAR}` noted |
 | auto-memory | `.agents/state/notepad.md` Decisions block | per machine, secrets dropped |
 | settings hooks / permissions | report only | see step 5 |
 
 ## Later: keeping in sync
-`/hx-core:doctor` warns `adopt-drift` when a Claude source changed since the
-last run. Re-run step 3 (`--apply`); hand-edited targets are kept unless `--force`.
+`/hx-core:doctor` warns `adopt-drift` when:
+- A Claude source changed or was removed since the last run (`changed` or `removed` sources)
+- An adopted target file was deleted from disk (`missing` adopted file)
+
+Fix by re-running step 3 (`--apply`) to re-create the files, or by removing the stale entry
+from `.agents/adopt.json` for sources that no longer exist. Hand-edited targets are skipped
+unless `--force`.
