@@ -24,7 +24,7 @@ function scan(root, ctx) {
     const meta = fm || {};
     const name = meta.name || f.replace(/\.md$/, '');
     const dropped = Object.keys(meta).filter((k) => !KEEP.includes(k));
-    let tools = DEFAULT_TOOLS;
+    let tools = DEFAULT_TOOLS.slice();
     let unmapped = [];
     if (meta.tools !== undefined) ({ tools, unmapped } = ctx.toolmap.mapToolList(meta.tools));
     const head = {

@@ -46,6 +46,39 @@ test('agents: no tools → default set; haiku → flash; unmapped tool → manua
   assert.ok(nb.leftovers.some((l) => /unmapped tool NotebookEdit/.test(l.text)));
 });
 
+test('agents: all unmapped tools → empty tools array, commandExecutionPolicy off, manual status', () => {
+  const root = tmpProject({
+    '.claude/agents/none.md': '---\nname: none\ndescription: None map\ntools: [NotebookEdit, SlashCommand]\n---\nx\n',
+  });
+  const [it] = agents.scan(root, ctx());
+  const fm = frontmatter(it.content);
+  assert.deepEqual(fm.tools, []);
+  assert.equal(fm.commandExecutionPolicy, 'off');
+  assert.equal(it.status, 'manual');
+  assert.ok(it.leftovers.some((l) => /unmapped tool NotebookEdit/.test(l.text)));
+  assert.ok(it.leftovers.some((l) => /unmapped tool SlashCommand/.test(l.text)));
+});
+
+test('agents: no model key → defaults to inherit', () => {
+  const root = tmpProject({
+    '.claude/agents/nomodel.md': '---\nname: nomodel\ndescription: No model\ntools: [Read]\n---\nx\n',
+  });
+  const [it] = agents.scan(root, ctx());
+  const fm = frontmatter(it.content);
+  assert.equal(fm.model, 'inherit');
+  assert.deepEqual(fm.tools, ['view_file']);
+});
+
+test('rules: scalar paths value converts to glob array', () => {
+  const root = tmpProject({
+    '.claude/rules/one.md': '---\npaths: src/**/*.ts\ndescription: One\n---\nx\n',
+  });
+  const [it] = rules.scan(root, ctx());
+  const fm = frontmatter(it.content);
+  assert.equal(fm.trigger, 'glob');
+  assert.deepEqual(fm.globs, ['src/**/*.ts']);
+});
+
 test('rules: paths → glob trigger; none → always_on; oversize → manual', () => {
   const root = tmpProject({
     '.claude/rules/ts.md': '---\npaths: ["src/**/*.ts", "**/*.tsx"]\ndescription: TS rules\n---\nUse `Edit` carefully.\n',
