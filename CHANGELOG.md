@@ -11,7 +11,7 @@
   hx-guard/setup thay thế. Ghi `.agents/adopt.json` (hash nguồn/đích) để chạy lại an toàn; file đích
   sửa tay được giữ nguyên trừ khi `--force`; không bao giờ ghi đè `AGENTS.md` không do adopt sinh.
   `doctor` thêm check `adopt-drift` (14 check): cảnh báo khi có Claude config chưa adopt hoặc nguồn
-  đổi sau lần adopt gần nhất. 9 file test mới.
+  đổi sau lần adopt gần nhất. 8 file test mới.
 
 ## 0.3.0 — 2026-09-22
 Sửa 6 điểm yếu từ đợt review "áp dụng agy vào phát triển phần mềm thật".
