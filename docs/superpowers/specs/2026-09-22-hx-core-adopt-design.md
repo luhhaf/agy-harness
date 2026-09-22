@@ -100,10 +100,11 @@ Converters:
   Code…”) is dropped. Target `AGENTS.md`. Length > 4000 chars → `manual` (“split into
   .agents/rules/”). Source hash = hash of the fully resolved text.
 - **skills**: every `.claude/skills/<name>/` with `SKILL.md`. Whole directory copied; only
-  `SKILL.md` is rewritten. Frontmatter keeps `name`, `description`, `metadata`; drops
-  `allowed-tools`, `disable-model-invocation`, `user-invocable`, `model`, `context`, `agent`,
-  `hooks` (listed in `reason`). Name must match `registry.nameRegex`, else `manual`. Name in
-  `registry.hxSkills` → `manual` (“shadows /hx-*:<name>”).
+  `SKILL.md` is rewritten. Frontmatter keeps only `name`, `description`; drops `metadata` too
+  (the shared frontmatter parser flattens nested YAML into a string it could not re-emit
+  validly), plus `allowed-tools`, `disable-model-invocation`, `user-invocable`, `model`,
+  `context`, `agent`, `hooks` (listed in `reason`). Name must match `registry.nameRegex`,
+  else `manual`. Name in `registry.hxSkills` → `manual` (“shadows /hx-*:<name>”).
 - **commands**: `.claude/commands/**/*.md`; nested `ns/name.md` → skill `ns-name`. Skipped when a
   skill of the same name exists in `.claude/skills` (skills win). Frontmatter `description`
   (or the first non-empty body line) becomes the skill description. `$ARGUMENTS` /

@@ -10,7 +10,10 @@ agy, chạy `/hx-core:adopt` trước tiên để tái sử dụng những gì �
 `/hx-core:doctor` bình thường.
 
 Skill `adopt` chuyển:
-- `CLAUDE.md` (với `@import`) → `AGENTS.md` (nếu chưa tồn tại)
+- `CLAUDE.md` (với `@import`) → `AGENTS.md`: tạo mới nếu `AGENTS.md` chưa tồn tại; nếu đã
+  tồn tại và không phải do `adopt` ghi thì bỏ qua (`manual`, merge tay); nếu do `adopt` ghi
+  từ lần chạy trước thì lần chạy sau ghi đè khi `CLAUDE.md` đổi (đây là cơ chế theo dõi drift
+  ở dưới), trừ khi bị sửa tay thì cũng bỏ qua trừ khi dùng `--force`
 - `.claude/skills/`, `.claude/commands/`, `.claude/agents/`, `.claude/rules/` → `.agents/skills/`, `.agents/agents/`, `.agents/rules/`
 - `.mcp.json` → `.agents/mcp_config.json`
 - Auto-memory của repo → phần Decisions trong `.agents/state/notepad.md` (bỏ secret)

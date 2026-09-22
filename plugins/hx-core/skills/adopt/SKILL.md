@@ -71,7 +71,7 @@ Claude files stay untouched; `/hx-core:doctor` reports no errors afterwards.
 | Claude Code | agy | Notes |
 |---|---|---|
 | `CLAUDE.md` (+ `@imports`) | `AGENTS.md` | imports inlined; boilerplate line dropped |
-| `.claude/skills/<n>/` | `.agents/skills/<n>/` | same format; `allowed-tools` etc. dropped |
+| `.claude/skills/<n>/` | `.agents/skills/<n>/` | same format; `allowed-tools`, `metadata`, etc. dropped |
 | `.claude/commands/**.md` | `.agents/skills/<n>/SKILL.md` | nested `a/b.md` → `a-b` |
 | `.claude/agents/*.md` | `.agents/agents/*.md` | tools mapped, `opus→pro`, `sonnet→inherit`, `haiku→flash` |
 | `.claude/rules/*.md` | `.agents/rules/*.md` | `paths:` → `trigger: glob` |
