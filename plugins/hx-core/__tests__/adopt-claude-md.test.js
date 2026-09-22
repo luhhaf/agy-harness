@@ -48,3 +48,48 @@ test('clean short file is auto; over 4000 chars is manual', () => {
   assert.equal(big.status, 'manual');
   assert.match(big.reason, /4000/);
 });
+
+test('import outside repo/home is blocked; ~/imports still resolve', () => {
+  const home = tmpProject({ 'shared.md': 'shared rule\n' });
+  // Create a file outside the repo root
+  const outside = path.join(path.dirname(tmpProject({})), 'outside.md');
+  require('fs').writeFileSync(outside, 'outside content\n');
+  try {
+    const root = tmpProject({ 'CLAUDE.md': '@~/shared.md\n@../../' + path.basename(outside) + '\n' });
+    const [it] = conv.scan(root, { ...ctx(), home });
+    assert.match(it.content, /shared rule/);
+    assert.ok(!/outside content/.test(it.content));
+    assert.ok(it.leftovers.some((l) => /import outside repo\/home @\.\.\/\.\.\/outside\.md/.test(l.text)));
+    assert.equal(it.status, 'manual');
+  } finally {
+    require('fs').unlinkSync(outside);
+  }
+});
+
+test('depth limit is enforced; nested imports over depth are reported', () => {
+  const root = tmpProject({
+    'CLAUDE.md': '@docs/d1.md\n',
+    'docs/d1.md': '@d2.md\n',
+    'docs/d2.md': '@d3.md\n',
+    'docs/d3.md': '@d4.md\n',
+    'docs/d4.md': 'deep content\n',
+  });
+  const [it] = conv.scan(root, ctx());
+  assert.ok(!/deep content/.test(it.content), 'd4 content should not be inlined');
+  assert.ok(it.leftovers.some((l) => /import depth limit reached @d4\.md \(in docs\/d3\.md\)/.test(l.text)));
+  assert.equal(it.status, 'manual');
+});
+
+test('real cycle is handled: already-included comment blocks re-entry', () => {
+  const root = tmpProject({
+    'CLAUDE.md': '@docs/a.md\n',
+    'docs/a.md': '@b.md\n',
+    'docs/b.md': '@a.md\n',
+  });
+  const [it] = conv.scan(root, ctx());
+  assert.match(it.content, /<!-- adopted from @docs\/a\.md -->/);
+  assert.match(it.content, /<!-- adopted from @b\.md -->/);
+  assert.match(it.content, /<!-- adopted from @a\.md: already included -->/);
+  assert.equal(it.leftovers.length, 0, 'no leftovers for handled cycles');
+  assert.equal(it.status, 'auto');
+});
