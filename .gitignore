@@ -2,3 +2,4 @@
 .agents/state/
 node_modules/
 *.log
+.gstack/
