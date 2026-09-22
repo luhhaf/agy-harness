@@ -3,15 +3,38 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { decide } = require('../stop-gate');
+const { decide, verified } = require('../stop-gate');
 const { runHook, tmpWorkspace, payload } = require('./helpers');
 
 const stop = (extra) => ({ terminationReason: 'model_stop', fullyIdle: true, executionNum: 1, ...extra });
 
-test('no goal / inactive / done -> {}', () => {
+test('no goal / inactive -> {}', () => {
   assert.deepEqual(decide(null, stop()).output, {});
   assert.deepEqual(decide({ active: false, goal: 'x' }, stop()).output, {});
-  assert.deepEqual(decide({ active: true, done: true, goal: 'x' }, stop()).output, {});
+  assert.deepEqual(decide({ active: false, done: true, goal: 'x' }, stop()).output, {});
+});
+test('done + passing verify evidence for the same goal -> {}', () => {
+  const v = { passed: true, goal: 'x', checks: [{ command: 'npm test', exit: 0 }] };
+  assert.deepEqual(decide({ active: true, done: true, goal: 'x' }, stop(), v).output, {});
+  assert.equal(verified({ goal: 'x' }, v), true);
+  assert.equal(verified({ goal: 'x' }, { passed: true, goal: 'other' }), false);
+  assert.equal(verified({ goal: 'x' }, { passed: false, goal: 'x' }), false);
+  assert.equal(verified({ goal: 'x' }, null), false);
+});
+test('done by hand without evidence -> continue with an evidence reason', () => {
+  const r = decide({ active: true, done: true, goal: 'x' }, stop(), null);
+  assert.equal(r.output.decision, 'continue');
+  assert.match(r.output.reason, /no passing verify evidence/);
+  assert.equal(r.goal.continues, 1);
+  const r2 = decide({ active: true, done: true, goal: 'x' }, stop(), { passed: true, goal: 'another goal' });
+  assert.equal(r2.output.decision, 'continue');
+});
+test('last verify failed -> reason names the failing check', () => {
+  const v = { passed: false, goal: 'x', checks: [{ command: 'npm run lint', exit: 0 }, { command: 'npm test', exit: 1 }] };
+  const r = decide({ active: true, done: false, goal: 'x' }, stop(), v);
+  assert.equal(r.output.decision, 'continue');
+  assert.match(r.output.reason, /verify FAILED/);
+  assert.match(r.output.reason, /npm test.*exit 1/);
 });
 test('active goal -> continue and count', () => {
   const r = decide({ active: true, done: false, goal: 'Add login' }, stop());
@@ -41,6 +64,16 @@ test('e2e: persists continues to goal.json and stops after max', () => {
   const r3 = runHook('stop-gate.js', payload(stop(), ws));
   assert.deepEqual(r3.json, {});
   assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).active, false);
+});
+test('e2e: verify.json evidence lets a done goal stop; stale evidence does not', () => {
+  const ws = tmpWorkspace();
+  fs.writeFileSync(path.join(ws, '.agents/state/goal.json'), JSON.stringify({ active: true, done: true, goal: 'Add login' }));
+  fs.writeFileSync(path.join(ws, '.agents/state/verify.json'), JSON.stringify({ passed: true, goal: 'Add login', checks: [] }));
+  assert.deepEqual(runHook('stop-gate.js', payload(stop(), ws)).json, {});
+  fs.writeFileSync(path.join(ws, '.agents/state/verify.json'), JSON.stringify({ passed: false, goal: 'Add login', checks: [{ command: 'npm test', exit: 1 }] }));
+  const r = runHook('stop-gate.js', payload(stop(), ws));
+  assert.equal(r.json.decision, 'continue');
+  assert.match(r.json.reason, /npm test/);
 });
 test('e2e: corrupt goal.json -> {} and exit 0', () => {
   const ws = tmpWorkspace();

@@ -59,6 +59,11 @@
       "id": "win-diskpart",
       "regex": "\\bdiskpart\\b",
       "reason": "Disk partitioning is not allowed."
+    },
+    {
+      "id": "verify-evidence",
+      "regex": "(>{1,2}|\\btee\\b|\\bsed\\s+-i|Set-Content|Out-File|\\bcp\\b|\\bmv\\b|\\bcopy\\b|\\bmove\\b)[^\\n]*\\.agents[\\\\/]state[\\\\/]verify\\.json",
+      "reason": "verify.json is evidence written only by the verify script (/hx-workflows:verify)."
     }
   ],
   "ask": [
@@ -126,6 +131,11 @@
       "id": "win-takeown-icacls",
       "regex": "\\b(takeown|icacls)\\b[^\\n]*\\/(r|t)\\b",
       "reason": "Recursive ownership/permission change."
+    },
+    {
+      "id": "goal-json-shell",
+      "regex": "(>{1,2}|\\btee\\b|\\bsed\\s+-i|Set-Content|Out-File)[^\\n]*\\.agents[\\\\/]state[\\\\/]goal\\.json",
+      "reason": "goal.json is edited with the file tools; \"done\" is set only by the verify script."
     }
   ]
 }
