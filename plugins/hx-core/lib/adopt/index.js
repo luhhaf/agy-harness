@@ -41,7 +41,11 @@ function scan(root, opts = {}) {
     try {
       out.push(...CONVERTERS[k].scan(path.resolve(root), ctx));
     } catch (err) {
-      out.push(item({ kind: converterKind, source: `${converterKind} converter`, target: '', status: 'unsupported', reason: `converter failed: ${err.message}` }));
+      // converterFailed is an explicit flag runAdopt reads to suppress pruning for this
+      // run (a failed converter produces no real items, so its live targets would
+      // otherwise look stale and get pruned out from under untouched, correctly
+      // adopted files).
+      out.push(item({ kind: converterKind, source: `${converterKind} converter`, target: '', status: 'unsupported', reason: `converter failed: ${err.message}`, converterFailed: true }));
     }
   }
   return out;
@@ -133,8 +137,18 @@ function runAdopt(root, opts = {}) {
   // pruned "unproduced" targets here, every entry from a kind the user didn't ask to
   // touch would look stale and get deleted — silent data loss, worse than the cruft
   // this is meant to clean up. Never simplify this away.
+  //
+  // A full run is also not enough on its own: if any converter threw, it produced no
+  // real items for its kind (only the failure stub, target: ''), so every previously
+  // tracked target for that kind would look unproduced too. Pruning would then wipe
+  // drift tracking for files that are still correctly adopted and untouched on disk —
+  // losing that tracking is worse than leaving stale cruft, so prune is skipped
+  // entirely (not just for the failed kind) whenever any converter failed this run.
   const fullRun = !(opts.only && opts.only.length);
-  if (fullRun) {
+  const failedConverters = [...new Set(items.filter((it) => it.converterFailed).map((it) => it.kind))];
+  if (fullRun && failedConverters.length) {
+    for (const k of failedConverters) report.notes.push(`prune skipped: ${k} converter failed`);
+  } else if (fullRun) {
     const live = new Set();
     for (const it of items) {
       if (it.target) live.add(it.target);
@@ -143,7 +157,8 @@ function runAdopt(root, opts = {}) {
     const stale = Object.keys(nextItems).filter((t) => !live.has(t));
     if (stale.length) {
       for (const t of stale) delete nextItems[t];
-      report.notes.push(`pruned ${stale.length} stale adopt.json entry(ies): ${stale.join(', ')}`);
+      const verb = opts.apply ? 'pruned' : 'would prune';
+      report.notes.push(`${verb} ${stale.length} stale adopt.json entry(ies): ${stale.join(', ')}`);
     }
   }
 
@@ -171,8 +186,14 @@ function formatReport(r) {
   const lines = [`hx adopt — ${path.basename(r.root)}${r.apply ? '' : ' [dry-run]'}`];
   for (const it of r.items) {
     lines.push(`[${it.status}] ${it.source}${it.target ? ` → ${it.target}` : ''}${it.reason ? ` — ${it.reason}` : ''}`);
-    for (const f of it.files || []) {
-      if (f.action !== it.action || f.reason) lines.push(`    ${f.target} — ${f.action}: ${f.reason}`);
+    // Sub-lines exist to surface per-file divergence in a multi-file item (a skill's
+    // SKILL.md plus companions). A single-file item's one entry always shares the row's
+    // own action, so its sub-line would just restate the line above — skip it.
+    const files = it.files || [];
+    if (files.length > 1) {
+      for (const f of files) {
+        if (f.action !== it.action || f.reason) lines.push(`    ${f.target} — ${f.action}: ${f.reason}`);
+      }
     }
   }
   const count = (s) => r.items.filter((i) => i.status === s).length;

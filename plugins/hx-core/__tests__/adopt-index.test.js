@@ -136,18 +136,49 @@ test('adopt.json entries are pruned on a full run but survive an --only run', ()
   runAdopt(root, { apply: true, home });
   fs.rmSync(path.join(root, '.claude', 'skills', 'deploy'), { recursive: true, force: true });
 
-  // --only run first: the unscanned skill source is now gone, but pruning must not
+  // Dry run: pruning is computed for the note, but nothing on disk changes, so the
+  // note must say "would prune", not "pruned" — and adopt.json itself is untouched.
+  const dry = runAdopt(root, { home });
+  assert.ok(dry.notes.some((n) => /would prune 2 stale adopt\.json entry\(ies\)/.test(n)), dry.notes.join('\n'));
+  let a = JSON.parse(read(root, ADOPT_FILE));
+  assert.notEqual(a.items['.agents/skills/deploy/SKILL.md'], undefined);
+  assert.notEqual(a.items['.agents/skills/deploy/scripts/go.sh'], undefined);
+
+  // --only run next: the unscanned skill source is now gone, but pruning must not
   // touch it because this run never looked at skills at all.
   const only = runAdopt(root, { apply: true, only: ['claude-md'], home });
-  let a = JSON.parse(read(root, ADOPT_FILE));
+  a = JSON.parse(read(root, ADOPT_FILE));
   assert.notEqual(a.items['.agents/skills/deploy/SKILL.md'], undefined);
   assert.notEqual(a.items['.agents/skills/deploy/scripts/go.sh'], undefined);
   assert.equal(only.notes.some((n) => /pruned/.test(n)), false);
 
-  // Full run: the now-source-less skill entries are stale and must be pruned.
+  // Full apply run: the now-source-less skill entries are stale and must be pruned.
   const full = runAdopt(root, { apply: true, home });
   a = JSON.parse(read(root, ADOPT_FILE));
   assert.equal(a.items['.agents/skills/deploy/SKILL.md'], undefined);
   assert.equal(a.items['.agents/skills/deploy/scripts/go.sh'], undefined);
-  assert.ok(full.notes.some((n) => /pruned 2 stale adopt\.json entry\(ies\)/.test(n)), full.notes.join('\n'));
+  assert.ok(full.notes.some((n) => /^pruned 2 stale adopt\.json entry\(ies\)/.test(n)), full.notes.join('\n'));
+});
+
+test('a converter throw suppresses pruning entirely for that run, with a note', () => {
+  const root = tmpProject(PROJECT);
+  const home = HOME();
+  runAdopt(root, { apply: true, home });
+  // Monkey-patch the shared, cached skills module in place (same instance the
+  // orchestrator's CONVERTERS map holds) and restore it in `finally` so no other
+  // test in this file — or any other file — ever sees the throwing version.
+  const skills = require('../lib/adopt/skills');
+  const origScan = skills.scan;
+  skills.scan = () => { throw new Error('boom'); };
+  let r;
+  try {
+    r = runAdopt(root, { apply: true, home });
+  } finally {
+    skills.scan = origScan;
+  }
+  const a = JSON.parse(read(root, ADOPT_FILE));
+  assert.notEqual(a.items['.agents/skills/deploy/SKILL.md'], undefined);
+  assert.notEqual(a.items['.agents/skills/deploy/scripts/go.sh'], undefined);
+  assert.equal(r.notes.some((n) => /^pruned/.test(n) || /^would prune/.test(n)), false);
+  assert.ok(r.notes.some((n) => n === 'prune skipped: skill converter failed'), r.notes.join('\n'));
 });
