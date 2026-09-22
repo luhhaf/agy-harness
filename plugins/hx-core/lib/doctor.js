@@ -137,6 +137,39 @@ function scriptOf(command) {
   return tok ? tok.replace(/^["']|["']$/g, '') : null;
 }
 
+function adoptDrift({ root, home }) {
+  const { scan, ADOPT_FILE } = require('./adopt');
+  const { sha256 } = require('./adopt/common');
+  const a = readJson(path.join(root, ADOPT_FILE));
+  const claudeDirs = ['skills', 'commands', 'agents', 'rules'].map((d) => path.join(root, '.claude', d));
+  const hasClaude = exists(path.join(root, 'CLAUDE.md')) || exists(path.join(root, '.claude', 'CLAUDE.md')) || claudeDirs.some(exists);
+  if (a.error === 'missing') {
+    return hasClaude
+      ? warn('adopt-drift', 'Claude Code config found (CLAUDE.md or .claude/) but not adopted', 'run /hx-core:adopt')
+      : ok('adopt-drift', 'no Claude Code config to adopt');
+  }
+  if (a.error) return fail('adopt-drift', `${ADOPT_FILE} is not valid JSON: ${a.error}`, 'fix or delete the file and run /hx-core:adopt --apply');
+  const current = new Map();
+  for (const it of scan(root, { home })) {
+    if (it.content === null || it.track === false) continue;
+    current.set(it.target, it.sourceHash);
+    for (const f of it.files || []) current.set(f.target, f.sourceHash);
+  }
+  const removed = [];
+  const changed = [];
+  let edited = 0;
+  const items = Object.entries(a.value.items || {});
+  for (const [target, entry] of items) {
+    if (!current.has(target)) removed.push(target);
+    else if (current.get(target) !== entry.sourceHash) changed.push(target);
+    try { if (sha256(fs.readFileSync(path.join(root, target))) !== entry.targetHash) edited++; } catch (_) { /* target missing: counted as changed on next adopt */ }
+  }
+  if (changed.length || removed.length) {
+    return warn('adopt-drift', `${changed.length} source(s) changed, ${removed.length} removed since adopt: ${[...changed, ...removed].join(', ')}`, 'run /hx-core:adopt --apply (delete targets whose source was removed)');
+  }
+  return ok('adopt-drift', `${items.length} adopted file(s) in sync${edited ? `; ${edited} edited by hand (adopt will skip them)` : ''}`);
+}
+
 function stateIgnoredCheck({ root, fix, fixed }) {
   if (stateIgnored(root)) return ok('state-ignored', '.agents/state/ is gitignored');
   if (fix) { appendGitignore(root, '.agents/state/'); fixed.push('state-ignored'); return ok('state-ignored', 'added .agents/state/ to .gitignore'); }
@@ -199,7 +232,7 @@ function hxPlugins({ home }) {
     : ok('hx-plugins', 'hx-* plugins registered');
 }
 
-const CHECKS = [agentsDir, manifest, rootRules, rulesFrontmatter, placeholders, skills, agents, hooks,
+const CHECKS = [agentsDir, manifest, rootRules, rulesFrontmatter, placeholders, skills, agents, hooks, adoptDrift,
   stateIgnoredCheck, stateDir, goal, checksRunnable, hxPlugins];
 
 /**

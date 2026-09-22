@@ -6,6 +6,7 @@ const path = require('path');
 const { tmpProject, writeFiles, read, exists } = require('./helpers');
 const { runSetup } = require('../lib/setup');
 const { runDoctor } = require('../lib/doctor');
+const { runAdopt } = require('../lib/adopt');
 
 const PROJECT = {
   'package.json': { name: 'demo', scripts: { test: 'vitest run', lint: 'eslint .' } },
@@ -211,4 +212,30 @@ test('report shape: ok, errors, warnings counts and every result has id/level/me
   for (const x of r.results) {
     assert.ok(x.id && ['ok', 'warn', 'error'].includes(x.level) && typeof x.message === 'string');
   }
+});
+
+test('adopt-drift: ok without Claude files, warn when Claude files are not adopted', () => {
+  assert.equal(byId(runDoctor(healthy(), OPTS), 'adopt-drift').level, 'ok');
+  const r = runDoctor(healthy({ 'CLAUDE.md': '# x\n' }), OPTS);
+  assert.equal(byId(r, 'adopt-drift').level, 'warn');
+  assert.match(byId(r, 'adopt-drift').message, /not adopted/);
+});
+
+test('adopt-drift: in sync after adopt; warn when a source changes or disappears; hand edits are noted', () => {
+  const root = healthy({ 'CLAUDE.md': '# x\n', '.claude/rules/r.md': 'rule\n' });
+  fs.rmSync(path.join(root, 'AGENTS.md')); // let adopt own AGENTS.md
+  runAdopt(root, { apply: true, home: OPTS.home });
+  let d = byId(runDoctor(root, OPTS), 'adopt-drift');
+  assert.equal(d.level, 'ok', d.message);
+  assert.match(d.message, /2 adopted file\(s\) in sync/);
+  fs.writeFileSync(path.join(root, 'AGENTS.md'), '# edited\n');
+  d = byId(runDoctor(root, OPTS), 'adopt-drift');
+  assert.equal(d.level, 'ok');
+  assert.match(d.message, /1 edited by hand/);
+  fs.writeFileSync(path.join(root, 'CLAUDE.md'), '# y\n');
+  fs.rmSync(path.join(root, '.claude', 'rules', 'r.md'));
+  d = byId(runDoctor(root, OPTS), 'adopt-drift');
+  assert.equal(d.level, 'warn');
+  assert.match(d.message, /1 source\(s\) changed.*1 removed/);
+  assert.match(d.fix, /hx-core:adopt --apply/);
 });

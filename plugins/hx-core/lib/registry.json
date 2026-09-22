@@ -10,6 +10,6 @@
   "ruleMaxChars": 12000,
   "rootRulesWarnChars": 4000,
   "hookMaxTimeout": 10,
-  "hxSkills": ["using-harness", "notepad", "handoff", "setup", "doctor", "brainstorm", "plan", "tdd", "debug", "review", "verify", "ship", "execute", "commit"],
+  "hxSkills": ["using-harness", "notepad", "handoff", "setup", "doctor", "adopt", "brainstorm", "plan", "tdd", "debug", "review", "verify", "ship", "execute", "commit"],
   "hxPlugins": ["hx-core", "hx-workflows", "hx-agents", "hx-guard"]
 }
