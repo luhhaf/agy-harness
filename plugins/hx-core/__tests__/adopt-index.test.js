@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { tmpProject, read, exists } = require('./helpers');
 const { runAdopt, scan, formatReport, countSources, hasSources, ADOPT_FILE, KINDS } = require('../lib/adopt');
 
@@ -180,7 +181,7 @@ test('a converter throw suppresses pruning entirely for that run, with a note', 
   assert.notEqual(a.items['.agents/skills/deploy/SKILL.md'], undefined);
   assert.notEqual(a.items['.agents/skills/deploy/scripts/go.sh'], undefined);
   assert.equal(r.notes.some((n) => /^pruned/.test(n) || /^would prune/.test(n)), false);
-  assert.ok(r.notes.some((n) => n === 'prune skipped: skill converter failed'), r.notes.join('\n'));
+  assert.ok(r.notes.some((n) => n === 'prune skipped: skills converter failed'), r.notes.join('\n'));
 });
 
 test('runAdopt with apply:true on a sourceless project creates no .agents/state/ and does not modify .gitignore', () => {
@@ -191,4 +192,90 @@ test('runAdopt with apply:true on a sourceless project creates no .agents/state/
   assert.equal(read(root, '.gitignore'), gitignoreBefore, '.gitignore should not be modified');
   const adoptFile = exists(root, ADOPT_FILE);
   assert.equal(adoptFile, false, 'adopt.json should not be created');
+});
+
+test('duplicate target across items: exactly one item writes, the rest are unsupported; --apply does not oscillate', () => {
+  // .claude/commands/db-migrate.md and .claude/commands/db/migrate.md both flatten to
+  // the skill name "db-migrate" (commands.js replaces "/" with "-"), so both would
+  // otherwise claim .agents/skills/db-migrate/SKILL.md.
+  const root = tmpProject({
+    '.claude/commands/db-migrate.md': '# DB Migrate\nRun the first migration.\n',
+    '.claude/commands/db/migrate.md': '# DB Migrate\nRun the second migration.\n',
+  });
+  const home = HOME();
+  const target = '.agents/skills/db-migrate/SKILL.md';
+
+  const r = runAdopt(root, { apply: true, only: ['commands'], home });
+  const rows = r.items.filter((i) => i.target === target);
+  assert.equal(rows.length, 2, r.items.map((i) => `${i.source} -> ${i.target}`).join('\n'));
+  const writer = rows.find((i) => i.status !== 'unsupported');
+  const loser = rows.find((i) => i.status === 'unsupported');
+  assert.ok(writer, 'exactly one item must write the target');
+  assert.equal(writer.status, 'created');
+  assert.equal(writer.source, '.claude/commands/db-migrate.md');
+  assert.ok(loser, 'the later claimant must be reported, not silently lost');
+  assert.equal(loser.source, '.claude/commands/db/migrate.md');
+  assert.match(loser.reason, /already claimed by \.claude\/commands\/db-migrate\.md; rename it/);
+
+  // Oscillation regression: before the fix, decide() ran against the pre-write
+  // filesystem for every item, so both were reported "created", only one survived on
+  // disk, and each subsequent --apply flipped which content was on disk. Content must
+  // now be byte-identical after every re-run.
+  const contentAfterFirst = read(root, target);
+  for (let i = 1; i <= 3; i++) {
+    runAdopt(root, { apply: true, only: ['commands'], home });
+    assert.equal(read(root, target), contentAfterFirst, `target content changed after re-run ${i}`);
+  }
+});
+
+test('symlinked Claude sources are reported as unsupported, not silently dropped; countSources sees them', (t) => {
+  const root = tmpProject({});
+  const realFile = path.join(root, 'real-shared.md');
+  fs.writeFileSync(realFile, '---\nname: shared\ndescription: shared agent\n---\nShared body\n');
+  const agentsDir = path.join(root, '.claude', 'agents');
+  fs.mkdirSync(agentsDir, { recursive: true });
+  const linkPath = path.join(agentsDir, 'shared.md');
+  try {
+    fs.symlinkSync(realFile, linkPath, 'file');
+  } catch (err) {
+    t.skip(`platform refused to create a symlink: ${err.message}`);
+    return;
+  }
+  const home = HOME();
+
+  const before = countSources(root, home);
+  assert.equal(before.claudeMd, false);
+  assert.ok(hasSources(before), 'a symlinked-only source tree must not look sourceless');
+
+  const r = runAdopt(root, { only: ['agents'], home });
+  const it = r.items.find((i) => i.source === '.claude/agents/shared.md');
+  assert.ok(it, r.items.map((i) => i.source).join('\n'));
+  assert.equal(it.status, 'unsupported');
+  assert.match(it.reason, /symlinked source is not followed/);
+});
+
+test('safety invariant: .claude/** and CLAUDE.md are byte-identical before and after a run', () => {
+  const root = tmpProject(PROJECT); // includes a skill dir with a companion file
+  const home = HOME();
+  const hashTree = () => {
+    const map = {};
+    const claudeMdPath = path.join(root, 'CLAUDE.md');
+    if (fs.existsSync(claudeMdPath)) map['CLAUDE.md'] = crypto.createHash('sha256').update(fs.readFileSync(claudeMdPath)).digest('hex');
+    const walkAll = (dir, prefix) => {
+      for (const d of fs.readdirSync(dir, { withFileTypes: true })) {
+        const rel = prefix ? `${prefix}/${d.name}` : d.name;
+        const abs = path.join(dir, d.name);
+        if (d.isDirectory()) walkAll(abs, rel);
+        else if (d.isFile()) map[`.claude/${rel}`] = crypto.createHash('sha256').update(fs.readFileSync(abs)).digest('hex');
+      }
+    };
+    const claudeDir = path.join(root, '.claude');
+    if (fs.existsSync(claudeDir)) walkAll(claudeDir, '');
+    return map;
+  };
+  const before = hashTree();
+  assert.ok(Object.keys(before).length >= 5, 'fixture must cover CLAUDE.md plus a non-trivial .claude/ tree');
+  runAdopt(root, { apply: true, force: true, home });
+  const after = hashTree();
+  assert.deepEqual(after, before);
 });

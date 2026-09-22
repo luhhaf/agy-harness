@@ -7,7 +7,7 @@ const os = require('os');
 const path = require('path');
 const registry = require('../registry.json');
 const toolmap = require('./toolmap');
-const { sha256, walk, item } = require('./common');
+const { sha256, walk, walkSymlinks, item } = require('./common');
 const { exists, readJson, writeText, stateIgnored, appendGitignore, listDirs } = require('../fs');
 const { memoryDirs } = require('./memory');
 
@@ -26,6 +26,14 @@ const CONVERTERS = {
 };
 const KINDS = Object.keys(CONVERTERS);
 
+// .claude/ directories that can hold a symlinked source, mapped to the kind reported
+// for a symlink item found under them. `walk()`/`listDirs()`/`listFiles()` all use
+// readdirSync(withFileTypes) filtered on isDirectory()/isFile(), neither of which is
+// true for a symlink (it is not followed), so a symlinked source silently vanishes
+// from every converter that scans these dirs unless it is reported here first.
+const SYMLINK_DIRS = { skills: 'skill', commands: 'command', agents: 'agent', rules: 'rule' };
+const SYMLINK_REASON = 'symlinked source is not followed; copy the real file into .claude/ or adopt its target directly';
+
 function makeCtx(opts) {
   return { home: opts.home || os.homedir(), registry, toolmap };
 }
@@ -34,21 +42,62 @@ function makeCtx(opts) {
 function scan(root, opts = {}) {
   const ctx = makeCtx(opts);
   const kinds = opts.only && opts.only.length ? opts.only : KINDS;
+  const absRoot = path.resolve(root);
   const out = [];
   for (const k of kinds) {
     if (!CONVERTERS[k]) continue;
-    const converterKind = CONVERTERS[k].kind || k;
     try {
-      out.push(...CONVERTERS[k].scan(path.resolve(root), ctx));
+      out.push(...CONVERTERS[k].scan(absRoot, ctx));
     } catch (err) {
       // converterFailed is an explicit flag runAdopt reads to suppress pruning for this
       // run (a failed converter produces no real items, so its live targets would
       // otherwise look stale and get pruned out from under untouched, correctly
-      // adopted files).
-      out.push(item({ kind: converterKind, source: `${converterKind} converter`, target: '', status: 'unsupported', reason: `converter failed: ${err.message}`, converterFailed: true }));
+      // adopted files). `k` (the CONVERTERS key, e.g. "skills") is used here rather
+      // than the converter module's own `kind` (e.g. "skill": singular, per-item
+      // vocabulary) because this note is compared against KINDS / --only, which are
+      // spelled in the plural.
+      out.push(item({ kind: k, source: `${k} converter`, target: '', status: 'unsupported', reason: `converter failed: ${err.message}`, converterFailed: true }));
+    }
+    if (SYMLINK_DIRS[k]) {
+      for (const rel of walkSymlinks(path.join(absRoot, '.claude', k))) {
+        out.push(item({ kind: SYMLINK_DIRS[k], source: `.claude/${k}/${rel}`, target: '', status: 'unsupported', reason: SYMLINK_REASON }));
+      }
     }
   }
+  dedupeTargets(out);
   return out;
+}
+
+/**
+ * Detect items (or their files[] entries) that would write to the same target and
+ * neutralise every claimant after the first, so a duplicate target never silently
+ * loses data and never oscillates between claimants on repeated --apply runs (each
+ * run would otherwise see the *other* claimant's file on disk, "restore" its own, and
+ * flip forever). Runs after every converter has scanned, so it protects all of them —
+ * not just the skill-vs-command clash commands.js already guards on its own.
+ */
+function dedupeTargets(items) {
+  const claimed = new Map(); // target -> source of the first (kept) claimant
+  const claims = [];
+  for (const it of items) {
+    if (it.status !== 'unsupported' && it.content !== null && it.target) claims.push({ it, isMain: true, target: it.target, source: it.source });
+    for (const f of it.files || []) claims.push({ it, isMain: false, target: f.target, source: f.source, file: f });
+  }
+  for (const c of claims) {
+    if (!claimed.has(c.target)) { claimed.set(c.target, c.source); continue; }
+    const reason = `target ${c.target} already claimed by ${claimed.get(c.target)}; rename it`;
+    if (c.isMain) {
+      c.it.status = 'unsupported';
+      c.it.content = null;
+      c.it.files = [];
+      c.it.reason = reason;
+    } else {
+      // A companion file collided, not the item's own target: drop just that file so
+      // the rest of the item (and its other companions) still adopts normally.
+      c.it.files = c.it.files.filter((f) => f !== c.file);
+      c.it.reason = c.it.reason ? `${c.it.reason}; ${reason}` : reason;
+    }
+  }
 }
 
 /** What Claude Code material exists (for the report and the exit-3 decision). */
@@ -58,12 +107,19 @@ function countSources(root, home) {
   const hooks = Object.values(s.hooks || {}).reduce((n, e) => n + (Array.isArray(e) ? e.length : 0), 0);
   const perms = ['allow', 'deny', 'ask'].reduce((n, l) => n + ((s.permissions && Array.isArray(s.permissions[l])) ? s.permissions[l].length : 0), 0);
   const memDir = memoryDirs(r, home || os.homedir()).find(exists);
+  // A symlinked source (e.g. a shared .claude/agents/*.md, common when a team's
+  // harness is shared via symlink) is invisible to listDirs()/walk() — see
+  // SYMLINK_DIRS above — so it is added back in here. Without this, a project whose
+  // Claude sources are entirely symlinked would count as sourceless and wrongly hit
+  // the CLI's exit-3 "no Claude Code files found" path instead of a report explaining
+  // why nothing converted.
+  const symlinkCount = (dir) => walkSymlinks(path.join(r, '.claude', dir)).length;
   return {
     claudeMd: exists(path.join(r, 'CLAUDE.md')) || exists(path.join(r, '.claude', 'CLAUDE.md')),
-    skills: listDirs(path.join(r, '.claude', 'skills')).length,
-    commands: walk(path.join(r, '.claude', 'commands')).filter((f) => f.endsWith('.md')).length,
-    agents: walk(path.join(r, '.claude', 'agents')).filter((f) => f.endsWith('.md')).length,
-    rules: walk(path.join(r, '.claude', 'rules')).filter((f) => f.endsWith('.md')).length,
+    skills: listDirs(path.join(r, '.claude', 'skills')).length + symlinkCount('skills'),
+    commands: walk(path.join(r, '.claude', 'commands')).filter((f) => f.endsWith('.md')).length + symlinkCount('commands'),
+    agents: walk(path.join(r, '.claude', 'agents')).filter((f) => f.endsWith('.md')).length + symlinkCount('agents'),
+    rules: walk(path.join(r, '.claude', 'rules')).filter((f) => f.endsWith('.md')).length + symlinkCount('rules'),
     hooks,
     permissions: perms,
     mcp: exists(path.join(r, '.mcp.json')),

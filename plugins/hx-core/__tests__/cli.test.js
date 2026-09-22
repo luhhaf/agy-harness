@@ -108,9 +108,13 @@ test('adopt.js --apply with no Claude files exits 3 without creating .agents dir
 
 test('adopt.js --only deduplicates kinds; empty --only exits 2', () => {
   const root = tmpProject(CLAUDE_PROJECT);
-  const dup = run(ADOPT, ['--only', 'claude-md,claude-md,mcp'], root, HOME);
+  // assert.match on the text report would pass whether the row appeared once or
+  // twice (both contain the substring); read the JSON form and count rows instead so
+  // a regression that re-processes the "claude-md,claude-md" duplicate is caught.
+  const dup = run(ADOPT, ['--only', 'claude-md,claude-md,mcp', '--json'], root, HOME);
   assert.equal(dup.status, 0, dup.stderr);
-  assert.match(dup.stdout, /\[created\] CLAUDE\.md → AGENTS\.md/);
+  assert.ok(dup.json, 'stdout must be JSON');
+  assert.equal(dup.json.items.filter((i) => i.target === 'AGENTS.md').length, 1);
   const empty = run(ADOPT, ['--only', ''], root, HOME);
   assert.equal(empty.status, 2);
   assert.match(empty.stderr, /usage/i);

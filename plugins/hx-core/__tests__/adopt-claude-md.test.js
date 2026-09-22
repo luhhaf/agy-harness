@@ -55,11 +55,15 @@ test('import outside repo/home is blocked; ~/imports still resolve', () => {
   const outside = path.join(path.dirname(tmpProject({})), 'outside.md');
   require('fs').writeFileSync(outside, 'outside content\n');
   try {
-    const root = tmpProject({ 'CLAUDE.md': '@~/shared.md\n@../../' + path.basename(outside) + '\n' });
+    // outside.md sits one level above root (root's own parent dir, `tmpdir()`), so
+    // `@../outside.md` is the path that genuinely resolves to it; this is what makes
+    // the assertions below actually exercise the boundary check, rather than passing
+    // vacuously because the resolved path never existed in the first place.
+    const root = tmpProject({ 'CLAUDE.md': '@~/shared.md\n@../' + path.basename(outside) + '\n' });
     const [it] = conv.scan(root, { ...ctx(), home });
     assert.match(it.content, /shared rule/);
     assert.ok(!/outside content/.test(it.content));
-    assert.ok(it.leftovers.some((l) => /import outside repo\/home @\.\.\/\.\.\/outside\.md/.test(l.text)));
+    assert.ok(it.leftovers.some((l) => /import outside repo\/home @\.\.\/outside\.md/.test(l.text)));
     assert.equal(it.status, 'manual');
   } finally {
     require('fs').unlinkSync(outside);

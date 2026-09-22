@@ -71,8 +71,28 @@ function walk(dir, prefix = '') {
   return out.sort();
 }
 
+/**
+ * Symlinked entries under dir (files or directories), as relative paths with `/`
+ * separators, sorted. Recurses into real directories but does not follow a symlink
+ * once found — it is reported, not walked. `readdirSync(withFileTypes)` never follows
+ * symlinks (Dirent.isDirectory()/isFile() are both false for one), so `walk()` above
+ * silently drops them; callers that need to know a symlinked source exists (rather than
+ * pretending it does not) use this instead. [] when dir is missing.
+ */
+function walkSymlinks(dir, prefix = '') {
+  let entries;
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (_) { return []; }
+  const out = [];
+  for (const d of entries) {
+    const rel = prefix ? `${prefix}/${d.name}` : d.name;
+    if (d.isSymbolicLink()) out.push(rel);
+    else if (d.isDirectory()) out.push(...walkSymlinks(path.join(dir, d.name), rel));
+  }
+  return out.sort();
+}
+
 function item(fields) {
   return { status: 'auto', reason: '', leftovers: [], content: null, ...fields };
 }
 
-module.exports = { sha256, splitDoc, wrap, renderFrontmatter, walk, item };
+module.exports = { sha256, splitDoc, wrap, renderFrontmatter, walk, walkSymlinks, item };
