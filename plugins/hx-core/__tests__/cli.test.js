@@ -67,3 +67,32 @@ test('doctor.js --json prints the report; --fix repairs the state checks', () =>
   assert.ok(r.json && Array.isArray(r.json.results));
   assert.ok(r.json.fixed.includes('state-ignored'));
 });
+
+const ADOPT = path.join(__dirname, '..', 'skills', 'adopt', 'scripts', 'adopt.js');
+const CLAUDE_PROJECT = { 'CLAUDE.md': '# Rules\nUse `Bash`.\n', '.gitignore': '' };
+
+test('adopt.js is dry-run by default, --apply writes, exit 3 with no Claude files', () => {
+  const root = tmpProject(CLAUDE_PROJECT);
+  const dry = run(ADOPT, [], root, HOME);
+  assert.equal(dry.status, 0, dry.stderr);
+  assert.match(dry.stdout, /\[created\] CLAUDE\.md → AGENTS\.md/);
+  assert.match(dry.stdout, /Dry run/);
+  assert.equal(exists(root, 'AGENTS.md'), false);
+  const ap = run(ADOPT, ['--apply', '--json', '--root', root], tmpProject({}), HOME);
+  assert.equal(ap.status, 0, ap.stderr);
+  assert.ok(ap.json && ap.json.apply === true);
+  assert.ok(exists(root, 'AGENTS.md'));
+  assert.ok(exists(root, '.agents/adopt.json'));
+  const none = run(ADOPT, [], tmpProject(PROJECT), HOME);
+  assert.equal(none.status, 3);
+  assert.match(none.stderr, /no Claude Code files/i);
+});
+
+test('adopt.js --only accepts known kinds; unknown kind or flag exits 2', () => {
+  const root = tmpProject(CLAUDE_PROJECT);
+  assert.equal(run(ADOPT, ['--only', 'claude-md,mcp'], root, HOME).status, 0);
+  const bad = run(ADOPT, ['--only', 'nope'], root, HOME);
+  assert.equal(bad.status, 2);
+  assert.match(bad.stderr, /usage/i);
+  assert.equal(run(ADOPT, ['--bogus'], root, HOME).status, 2);
+});
