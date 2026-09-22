@@ -182,3 +182,13 @@ test('a converter throw suppresses pruning entirely for that run, with a note', 
   assert.equal(r.notes.some((n) => /^pruned/.test(n) || /^would prune/.test(n)), false);
   assert.ok(r.notes.some((n) => n === 'prune skipped: skill converter failed'), r.notes.join('\n'));
 });
+
+test('runAdopt with apply:true on a sourceless project creates no .agents/state/ and does not modify .gitignore', () => {
+  const root = tmpProject({ '.gitignore': '' });
+  const gitignoreBefore = read(root, '.gitignore');
+  const r = runAdopt(root, { apply: true, home: HOME() });
+  assert.equal(exists(root, '.agents/state'), false, '.agents/state should not be created');
+  assert.equal(read(root, '.gitignore'), gitignoreBefore, '.gitignore should not be modified');
+  const adoptFile = exists(root, ADOPT_FILE);
+  assert.equal(adoptFile, false, 'adopt.json should not be created');
+});

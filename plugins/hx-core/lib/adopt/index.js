@@ -168,8 +168,11 @@ function runAdopt(root, opts = {}) {
       fs.mkdirSync(path.dirname(abs), { recursive: true });
       fs.writeFileSync(abs, e.content);
     }
-    fs.mkdirSync(path.join(root, '.agents', 'state'), { recursive: true });
-    if (!stateIgnored(root)) appendGitignore(root, '.agents/state/');
+    // Only create state dir and modify gitignore if there is something to write or adopt.json exists
+    if (writes.length || Object.keys(nextItems).length || prevFile.value) {
+      fs.mkdirSync(path.join(root, '.agents', 'state'), { recursive: true });
+      if (!stateIgnored(root)) appendGitignore(root, '.agents/state/');
+    }
     if (Object.keys(nextItems).length || prevFile.value) {
       const manifest = { harness: 'hx', version: VERSION, at: new Date().toISOString().slice(0, 10), items: nextItems };
       writeText(path.join(root, ADOPT_FILE), JSON.stringify(manifest, null, 2) + '\n');

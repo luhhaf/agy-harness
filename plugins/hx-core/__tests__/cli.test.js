@@ -96,3 +96,25 @@ test('adopt.js --only accepts known kinds; unknown kind or flag exits 2', () => 
   assert.match(bad.stderr, /usage/i);
   assert.equal(run(ADOPT, ['--bogus'], root, HOME).status, 2);
 });
+
+test('adopt.js --apply with no Claude files exits 3 without creating .agents dir', () => {
+  const empty = tmpProject({});
+  const r = run(ADOPT, ['--apply', '--root', empty], tmpProject({}), HOME);
+  assert.equal(r.status, 3);
+  assert.match(r.stderr, /no Claude Code files/i);
+  assert.equal(exists(empty, '.agents'), false, '.agents directory should not be created');
+  assert.equal(exists(empty, '.agents/state'), false, '.agents/state directory should not be created');
+});
+
+test('adopt.js --only deduplicates kinds; empty --only exits 2', () => {
+  const root = tmpProject(CLAUDE_PROJECT);
+  const dup = run(ADOPT, ['--only', 'claude-md,claude-md,mcp'], root, HOME);
+  assert.equal(dup.status, 0, dup.stderr);
+  assert.match(dup.stdout, /\[created\] CLAUDE\.md → AGENTS\.md/);
+  const empty = run(ADOPT, ['--only', ''], root, HOME);
+  assert.equal(empty.status, 2);
+  assert.match(empty.stderr, /usage/i);
+  const comma = run(ADOPT, ['--only', ',,,'], root, HOME);
+  assert.equal(comma.status, 2);
+  assert.match(comma.stderr, /usage/i);
+});
