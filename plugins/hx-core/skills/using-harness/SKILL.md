@@ -19,7 +19,7 @@ metadata:
 | search text | `grep_search` |
 | find files | `find_by_name` / `list_dir` |
 | write a new file | `write_to_file` |
-| edit a file | `replace_file_content` / `multi_replace_file_content` |
+| edit a file | `replace_file_content` (`multi_replace_file_content` exists for the main agent only; do not list it in a subagent's `tools`) |
 | run a command / tests | `run_command` (wait for it to finish; `manage_task` lists/kills background processes) |
 | create a todo / task list | task artifact: `write_to_file` with `IsArtifact: true`, `ArtifactType: "task"` |
 | dispatch a subagent | `invoke_subagent` (built-in `self`, `research`, `browser`, or a custom one like `reviewer`) |
@@ -35,8 +35,10 @@ metadata:
 - **Subagents** (`hx-agents`): `explorer`, `planner`, `executor`, `reviewer`,
   `verifier`. Read-only agents cannot edit files.
 - **Hooks** (`hx-guard`): run automatically. They may block a dangerous
-  command, add context before each turn, or ask you to continue when a goal
-  is not done yet. If a hook blocks you, tell the user why and ask.
+  command, deny hand edits of `verify.json` / `"done": true` in `goal.json`,
+  add context before each turn (notepad Priority, active goal, last verify
+  result, lint notices), or ask you to continue while a goal has no passing
+  verify evidence. If a hook blocks you, tell the user why and ask.
 - **Project harness** (`<workspace>/.agents/`, committed, created by `/hx-core:setup`):
   - `harness.json` — stack and the project's check commands (`checks`)
   - `rules/*.md` — glob rules; `skills/project-checks` — how to run the checks
@@ -44,7 +46,11 @@ metadata:
   - root `AGENTS.md` — always-on project facts
 - **State** (`.agents/state/` in the workspace, gitignored):
   - `notepad.md` — decisions, open questions, working notes
-  - `goal.json` — the current goal and its checks (written by `/hx-workflows:plan`)
+  - `goal.json` — the current goal and its checks (written by `/hx-workflows:plan`;
+    closed only by the verify script)
+  - `verify.json` — evidence of the last verify run (written only by the verify
+    script; the stop hook trusts this, not the `done` flag)
+  - `lint.json` — notices queued by PostToolUse hooks, shown to you next turn
   - `handoff.md` — summary for the next session (written by `/hx-core:handoff`)
 
 ## Pick a workflow
@@ -54,9 +60,12 @@ metadata:
 | Code project without `.agents/harness.json` | `/hx-core:setup` (once), then `/hx-core:doctor` |
 | Skills/hooks/subagents misbehave in this project | `/hx-core:doctor` |
 | New feature, new project, unclear request | `/hx-workflows:brainstorm` then `/hx-workflows:plan` |
-| Write code for a planned task | `/hx-workflows:tdd` |
+| Run the whole plan to the end | `/hx-workflows:execute` |
+| Write code for one planned task | `/hx-workflows:tdd` |
 | Something is broken | `/hx-workflows:debug` |
 | Code is written, need a second pair of eyes | `/hx-workflows:review` |
-| Before saying "done" | `/hx-workflows:verify` |
+| Before saying "done" | `/hx-workflows:verify` (runs the script; the only way to close a goal) |
+| Save a checkpoint in git | `/hx-workflows:commit` |
+| Make commits | `/hx-workflows:commit` |
 | Ready to merge / hand over | `/hx-workflows:ship` |
 | End of session or switching machine | `/hx-core:handoff` |

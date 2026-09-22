@@ -6,7 +6,9 @@ These rules are always on. Follow them in every task.
 - Before you answer or act, check the skill list. If a skill matches the task
   (even a little), activate it and follow it.
 - Common matches: new feature or new project -> `/hx-workflows:brainstorm`;
-  a bug -> `/hx-workflows:debug`; "is it done?" -> `/hx-workflows:verify`.
+  a plan with open tasks -> `/hx-workflows:execute`; a bug ->
+  `/hx-workflows:debug`; "is it done?" -> `/hx-workflows:verify`;
+  "commit this" -> `/hx-workflows:commit`.
 
 ## 2. Track multi-step work
 - For any task with 3 or more steps, create a **task artifact**
@@ -17,9 +19,13 @@ These rules are always on. Follow them in every task.
 ## 3. Verify before you say "done"
 - Never say a task is complete, fixed, or passing without running the real
   check (test, build, lint) and reading its output in this session.
-- If the project has a `project-checks` skill or `.agents/harness.json`, use
-  those commands; they are the project's truth.
+- Use `/hx-workflows:verify`: its script runs the project's checks
+  (`.agents/harness.json` → `goal.json` → heuristics), writes the evidence to
+  `.agents/state/verify.json` and closes `goal.json`. Do not set
+  `"done": true` or write `verify.json` yourself; the guard hook denies it.
 - If a check fails, say so and show the failing output. Do not hide it.
+- When the harness injects lint/format notices at the start of a turn, fix
+  them or say why not before moving on.
 
 ## 4. Keep the notepad
 - Write important decisions and open questions to `.agents/state/notepad.md`
@@ -41,8 +47,14 @@ These rules are always on. Follow them in every task.
 
 ## 7. Delegate when it helps
 - Use `invoke_subagent` for parallel or read-heavy work:
-  `explorer` to map code, `reviewer` to review a diff, `verifier` to run checks.
+  `explorer` to map code, `reviewer` to review a diff, `verifier` to run checks,
+  `executor` for independent plan tasks (`/hx-workflows:execute` does this).
 - Give the subagent a clear goal, the files it needs, and what to return.
+
+## 9. Read hook notices
+- Lines starting with `[hx-harness]` at the start of a turn come from hooks:
+  notepad priority, the open goal, the last verify result, and lint/format
+  notices for files you just edited. Act on lint notices before moving on.
 
 ## 8. Set up the project harness once
 - If the workspace is a code project (`package.json`, `pom.xml`, `go.mod`,

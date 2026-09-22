@@ -166,17 +166,22 @@ function goal({ root }) {
 
 function checksRunnable({ root }) {
   const m = readJson(path.join(root, MANIFEST));
+  if (m.error) return ok('checks-runnable', 'skipped (no manifest)');
+  const checks = Array.isArray(m.value.checks) ? m.value.checks : [];
   const pkg = readJson(path.join(root, 'package.json'));
-  if (m.error || pkg.error) return ok('checks-runnable', 'skipped (no manifest or no package.json)');
   const scripts = (pkg.value && pkg.value.scripts) || {};
   const missing = [];
-  for (const c of m.value.checks || []) {
+  for (const c of checks) {
     const mm = /^(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?([\w:-]+)$/.exec(c);
-    if (mm && !scripts[mm[1]]) missing.push(c);
+    if (mm && !pkg.error && !scripts[mm[1]]) missing.push(`${c} (no such package.json script)`);
+    const w = /^(?:\.\/)?(mvnw|gradlew)(?:\.cmd|\.bat)?\b/.exec(c);
+    if (w && !exists(path.join(root, w[1]))) missing.push(`${c} (wrapper ${w[1]} not found at root)`);
+    if (/^uv run\b/.test(c) && !exists(path.join(root, 'uv.lock'))) missing.push(`${c} (uv.lock not found)`);
+    if (/^poetry run\b/.test(c) && !(exists(path.join(root, 'poetry.lock')) && exists(path.join(root, 'pyproject.toml')))) missing.push(`${c} (poetry.lock + pyproject.toml not found)`);
   }
   return missing.length
-    ? warn('checks-runnable', `manifest check(s) point at package.json scripts that do not exist: ${missing.join(', ')}`, 'update .agents/harness.json checks or add the scripts')
-    : ok('checks-runnable', 'manifest checks match package.json scripts');
+    ? warn('checks-runnable', `manifest check(s) cannot run as written: ${missing.join(', ')}`, 'update .agents/harness.json checks, add the scripts, or restore the wrapper/lockfile')
+    : ok('checks-runnable', `${checks.length} manifest check(s) look runnable`);
 }
 
 function hxPlugins({ home }) {

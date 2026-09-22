@@ -171,6 +171,19 @@ test('checks-runnable warns when a manifest check names a script that is gone', 
   assert.match(c.message, /npm run lint/);
 });
 
+test('checks-runnable warns when a maven/gradle wrapper or python lockfile is missing', () => {
+  const root = healthy();
+  writeFiles(root, { '.agents/harness.json': { harness: 'hx', checks: ['./mvnw -q test', './gradlew check', 'uv run pytest -q', 'poetry run ruff check .'] } });
+  const c = byId(runDoctor(root, OPTS), 'checks-runnable');
+  assert.equal(c.level, 'warn');
+  assert.match(c.message, /mvnw/);
+  assert.match(c.message, /gradlew/);
+  assert.match(c.message, /uv\.lock/);
+  assert.match(c.message, /poetry\.lock/);
+  writeFiles(root, { mvnw: '', gradlew: '', 'uv.lock': '', 'poetry.lock': '', 'pyproject.toml': '' });
+  assert.equal(byId(runDoctor(root, OPTS), 'checks-runnable').level, 'ok');
+});
+
 test('hx-plugins reads the global config: entry path, installed dir, or disabled plugin', () => {
   const root = healthy();
   const home = tmpProject({});

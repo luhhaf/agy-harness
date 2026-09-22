@@ -1,9 +1,9 @@
 {
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "hx-core",
-  "version": "0.2.0",
-  "description": "Harness foundation: sets up and checks the standard hx harness in a project (setup, doctor), always-on working rules, tool map for agy, notepad and handoff skills.",
+  "version": "0.3.0",
+  "description": "Harness foundation: sets up and checks the standard hx harness in a project (setup, doctor) for Node, Maven, Gradle, Go and Python stacks; always-on working rules, tool map for agy, notepad and handoff skills.",
   "author": { "name": "luatnq" },
   "license": "MIT",
-  "keywords": ["antigravity", "harness", "rules", "setup", "doctor"]
+  "keywords": ["antigravity", "harness", "rules", "setup", "doctor", "multi-stack"]
 }
