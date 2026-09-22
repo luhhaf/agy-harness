@@ -30,10 +30,12 @@ function scan(root, ctx) {
     }
     const { fm, body } = splitDoc(raw);
     const rw = ctx.toolmap.rewrite(body);
-    it.content = renderFrontmatter({ name, description: (fm && fm.description) || firstLine(body) }) + rw.text;
+    const description = (fm && fm.description) || firstLine(body);
+    it.content = renderFrontmatter({ name, description }) + rw.text;
     it.leftovers = rw.leftovers;
     const reasons = [];
     const manual = (r) => { it.status = 'manual'; reasons.push(r); };
+    if (!description) manual('description is required');
     if (/\$ARGUMENTS|\$\d/.test(body)) reasons.push('uses $ARGUMENTS/$1: verify agy passes arguments to skills');
     if (!nameRe.test(name)) manual(`name must match ${ctx.registry.nameRegex}`);
     if (ctx.registry.hxSkills.includes(name)) manual(`shadows /hx-*:${name}; rename the skill`);

@@ -26,6 +26,8 @@ test('skills: copies the directory, rewrites SKILL.md, drops Claude-only frontma
   assert.deepEqual(it.files.map((f) => f.target), ['.agents/skills/deploy/references/notes.md', '.agents/skills/deploy/scripts/go.sh']);
   assert.ok(Buffer.isBuffer(it.files[1].content));
   assert.match(it.files[0].sourceHash, /^sha256:/);
+  assert.deepEqual(it.files[0].content, Buffer.from('Read the notes\n'));
+  assert.deepEqual(it.files[1].content, Buffer.from('#!/bin/sh\necho hi\n'));
 });
 
 test('skills: bad name, hx clash, missing description, leftovers → manual', () => {
@@ -45,6 +47,16 @@ test('skills: bad name, hx clash, missing description, leftovers → manual', ()
   assert.equal(items.find((i) => /left/.test(i.source)).leftovers.length, 1);
 });
 
+test('skills: frontmatter name differs from directory → renamed in reason', () => {
+  const root = tmpProject({
+    '.claude/skills/deploy2/SKILL.md': '---\nname: Deploy_Two\ndescription: Deploy v2\n---\nbody\n',
+  });
+  const [it] = skills.scan(root, ctx());
+  const fm = frontmatter(it.content);
+  assert.equal(fm.name, 'deploy2');
+  assert.match(it.reason, /renamed frontmatter name "Deploy_Two" -> "deploy2"/);
+});
+
 test('commands: nested files become skills; description from frontmatter or first line; $ARGUMENTS noted', () => {
   const root = tmpProject({
     '.claude/commands/review.md': '---\ndescription: Review the diff\n---\nReview `git diff` with the Read tool. Args: $ARGUMENTS\n',
@@ -60,6 +72,15 @@ test('commands: nested files become skills; description from frontmatter or firs
   const migrate = items.find((i) => i.source === '.claude/commands/db/migrate.md');
   assert.equal(migrate.target, '.agents/skills/db-migrate/SKILL.md');
   assert.equal(frontmatter(migrate.content).description, 'Migrate');
+});
+
+test('commands: empty description → manual', () => {
+  const root = tmpProject({
+    '.claude/commands/empty.md': '   \n\n  \n',
+  });
+  const [it] = commands.scan(root, ctx());
+  assert.equal(it.status, 'manual');
+  assert.match(it.reason, /description is required/);
 });
 
 test('commands: a same-named .claude/skills entry wins', () => {

@@ -21,7 +21,8 @@ function scan(root, ctx) {
     const keep = {};
     const dropped = [];
     for (const [k, v] of Object.entries(fm || {})) (KEEP.includes(k) ? (keep[k] = v) : dropped.push(k));
-    keep.name = keep.name || name;
+    const origName = keep.name;
+    keep.name = name;
     const rw = ctx.toolmap.rewrite(body);
     const it = item({ kind, source: `${src}/SKILL.md`, target: `.agents/skills/${name}/SKILL.md`, content: renderFrontmatter(keep) + rw.text, sourceHash: sha256(raw), leftovers: rw.leftovers, files: [] });
     for (const f of walk(dir)) {
@@ -31,6 +32,7 @@ function scan(root, ctx) {
     }
     const reasons = [];
     const manual = (r) => { it.status = 'manual'; reasons.push(r); };
+    if (origName && origName !== name) reasons.push(`renamed frontmatter name "${origName}" -> "${name}"`);
     if (dropped.length) reasons.push(`dropped frontmatter ${dropped.join(', ')}`);
     if (!nameRe.test(name)) manual(`name must match ${ctx.registry.nameRegex}`);
     if (ctx.registry.hxSkills.includes(name)) manual(`shadows /hx-*:${name}; rename the skill`);
