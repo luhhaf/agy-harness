@@ -61,6 +61,8 @@ function scan(root, ctx) {
     const abs = path.join(dir, f);
     const raw = readText(abs) || '';
     const fm = frontmatter(raw) || {};
+    // Date source is mtime only. An mtime reset (git clone, backup restore, cp -r, ~/.claude sync)
+    // causes one notepad rewrite; item is untracked so nothing else depends on the hash.
     const date = fs.statSync(abs).mtime.toISOString().slice(0, 10);
     const line = `- ${date} — [${typeOf(raw, fm)}] ${fm.name || f.replace(/\.md$/, '')}: ${fm.description || ''}`.trimEnd();
     if (SECRET_RE.test(line)) { dropped++; continue; }

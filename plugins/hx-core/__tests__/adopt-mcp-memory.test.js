@@ -26,6 +26,15 @@ test('mcp: invalid JSON or no mcpServers → unsupported; absent → []', () => 
   assert.equal(bad.status, 'unsupported');
   const [empty] = mcp.scan(tmpProject({ '.mcp.json': { servers: {} } }), ctx());
   assert.equal(empty.status, 'unsupported');
+  const [arr] = mcp.scan(tmpProject({ '.mcp.json': { mcpServers: [] } }), ctx());
+  assert.equal(arr.status, 'unsupported');
+});
+
+test('mcp: invalid JSON with ${VAR} notes both errors', () => {
+  const [bad] = mcp.scan(tmpProject({ '.mcp.json': '{nope ${DB_KEY}' }), ctx());
+  assert.equal(bad.status, 'unsupported');
+  assert.match(bad.reason, /not valid JSON/);
+  assert.match(bad.reason, /\$\{VAR\}/);
 });
 
 function memoryHome(root, files) {
