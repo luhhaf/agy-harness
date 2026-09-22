@@ -239,3 +239,18 @@ test('adopt-drift: in sync after adopt; warn when a source changes or disappears
   assert.match(d.message, /1 source\(s\) changed.*1 removed/);
   assert.match(d.fix, /hx-core:adopt --apply/);
 });
+
+test('adopt-drift: warn when a tracked target file is deleted from disk', () => {
+  const root = healthy({ 'CLAUDE.md': '# x\n' });
+  fs.rmSync(path.join(root, 'AGENTS.md')); // let adopt own AGENTS.md
+  runAdopt(root, { apply: true, home: OPTS.home });
+  let d = byId(runDoctor(root, OPTS), 'adopt-drift');
+  assert.equal(d.level, 'ok');
+  // Delete the adopted target file
+  fs.rmSync(path.join(root, 'AGENTS.md'));
+  d = byId(runDoctor(root, OPTS), 'adopt-drift');
+  assert.equal(d.level, 'warn');
+  assert.match(d.message, /1 adopted file\(s\) missing/);
+  assert.match(d.message, /AGENTS\.md/);
+  assert.match(d.fix, /hx-core:adopt --apply/);
+});

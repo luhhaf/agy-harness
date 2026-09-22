@@ -157,15 +157,21 @@ function adoptDrift({ root, home }) {
   }
   const removed = [];
   const changed = [];
+  const missing = [];
   let edited = 0;
   const items = Object.entries(a.value.items || {});
   for (const [target, entry] of items) {
     if (!current.has(target)) removed.push(target);
     else if (current.get(target) !== entry.sourceHash) changed.push(target);
-    try { if (sha256(fs.readFileSync(path.join(root, target))) !== entry.targetHash) edited++; } catch (_) { /* target missing: counted as changed on next adopt */ }
+    try { if (sha256(fs.readFileSync(path.join(root, target))) !== entry.targetHash) edited++; } catch (_) { missing.push(target); }
   }
-  if (changed.length || removed.length) {
-    return warn('adopt-drift', `${changed.length} source(s) changed, ${removed.length} removed since adopt: ${[...changed, ...removed].join(', ')}`, 'run /hx-core:adopt --apply (delete targets whose source was removed)');
+  if (changed.length || removed.length || missing.length) {
+    const parts = [];
+    if (changed.length) parts.push(`${changed.length} source(s) changed`);
+    if (removed.length) parts.push(`${removed.length} removed`);
+    if (missing.length) parts.push(`${missing.length} adopted file(s) missing`);
+    const allTargets = [...changed, ...removed, ...missing];
+    return warn('adopt-drift', `${parts.join(', ')} since adopt: ${allTargets.join(', ')}`, 'run /hx-core:adopt --apply to re-create them, or remove the entry from .agents/adopt.json');
   }
   return ok('adopt-drift', `${items.length} adopted file(s) in sync${edited ? `; ${edited} edited by hand (adopt will skip them)` : ''}`);
 }
