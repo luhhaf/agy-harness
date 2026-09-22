@@ -41,9 +41,10 @@ diện đây là **bulk plugins directory** khi `agy plugin install <repo>`.
                       ▼                            └───────────────────────────┘
    ┌──────────────── hx-guard (hooks) ─────────────────────────────────────────┐
    │ PreToolUse  run_command   → pre-tool-guard.js   deny / ask                │
-   │ PostToolUse write/replace → post-tool-lint.js   nhắc formatter (stderr)   │
-   │ PreInvocation             → pre-invocation-context.js  bơm notepad + goal │
-   │ Stop                      → stop-gate.js        goal chưa done → continue │
+   │             write/replace → pre-tool-guard.js   bảo vệ goal.json/verify.json│
+   │ PostToolUse write/replace → post-tool-lint.js   xếp gợi ý vào lint.json   │
+   │ PreInvocation             → pre-invocation-context.js  notepad+goal+verify+lint│
+   │ Stop                      → stop-gate.js        chưa có verify.json pass → continue│
    └────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -61,7 +62,7 @@ nhưng workflow vẫn chạy.
 | `.agents/harness.json` | `setup` | skill `verify` (`checks`), `doctor` |
 | `.agents/rules/*.md` | `setup` (khung glob), model điền | agy khi sửa file khớp glob |
 | `.agents/skills/project-checks/SKILL.md` | `setup` | skill `verify`, bạn (`/project-checks`) |
-| `.agents/hooks.json` + `hooks/post-edit-lint.js` | `setup` | agy: PostToolUse → eslint file vừa sửa, chỉ báo |
+| `.agents/hooks.json` + `hooks/post-edit-lint.js` | `setup` | agy: PostToolUse → linter theo file (eslint/ruff/gofmt) trên file vừa sửa → `.agents/state/lint.json`, hx-guard bơm lượt sau |
 
 Chi tiết: [09-setup-project.md](09-setup-project.md).
 
@@ -70,7 +71,9 @@ Chi tiết: [09-setup-project.md](09-setup-project.md).
 | File | Ai ghi | Ai đọc |
 |---|---|---|
 | `notepad.md` | skill `notepad`, `brainstorm` (decisions), bạn | hook `pre-invocation-context` (mục **Priority**), skill `handoff` |
-| `goal.json` | skill `plan` (tạo), `verify` (đóng), hook `stop-gate` (đếm `continues`) | hook `pre-invocation-context`, `stop-gate`, skill `verify`, `ship` |
+| `goal.json` | skill `plan` (tạo), **script** `verify.js` (đóng), hook `stop-gate` (đếm `continues`) | hook `pre-invocation-context`, `stop-gate`, skill `verify`, `execute`, `ship` |
+| `verify.json` | chỉ script `verify.js` (hx-guard deny mọi cách ghi khác) | hook `stop-gate` (bằng chứng), `pre-invocation-context` |
+| `lint.json` | hook `post-tool-lint` (hx-guard), hook `post-edit-lint.js` của project | hook `pre-invocation-context` (rút và xoá mỗi lượt) |
 | `handoff.md` | skill `handoff` | bạn / phiên sau |
 
 `goal.json`:

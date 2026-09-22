@@ -38,8 +38,13 @@ và `.agents/state/goal.json`:
 ```
 Từ lúc này mỗi lượt model đều thấy "Active goal … Run /hx-workflows:verify before saying it is done".
 
-## 3. TDD từng task
+## 3. Chạy plan
 
+```
+/hx-workflows:execute
+```
+Agent lấy T1, làm theo tdd, chạy Verify của T1, tick artifact, sang T2… T2 và T3 độc lập thì nó có thể
+giao cho hai `executor` chạy song song. Muốn tự tay từng task:
 ```
 /hx-workflows:tdd T1
 ```
@@ -70,13 +75,17 @@ Agent tự mở file kiểm chứng finding rồi hỏi bạn muốn sửa gì; 
 ```
 /hx-workflows:verify
 ```
+Agent chạy `node <hx-workflows>/skills/verify/scripts/verify.js --root .`:
 ```
 Verification: PASS
 | check | command | exit | summary |
-| tests | ./mvnw -q test | 0 | 143 tests, 0 failures |
-| format | ./mvnw -q spotless:check | 0 | clean |
+| 1 | `./mvnw -q spotless:check` | 0 | pass |
+| 2 | `./mvnw -q test` | 0 | pass — Tests run: 143, Failures: 0 |
+Failures: none
+Evidence: .agents/state/verify.json (source: harness.json, 2026-09-22T10:12:03Z)
+Goal closed: "GET /orders/{id}/pdf returns invoice PDF" (done=true, active=false)
 ```
-→ `goal.json.done = true`, `active = false`.
+Chỉ script này mới đặt `done = true`; nếu agent định sửa tay, hook `pre-tool-guard` từ chối.
 
 ```
 /hx-workflows:ship
@@ -93,5 +102,6 @@ Commit `.agents/state/handoff.md` (+ `notepad.md` nếu bạn không ignore), pu
 `git pull`, mở agy, nói "Read .agents/state/handoff.md and continue from Next steps".
 
 ## Nếu agent nói "xong" mà chưa chạy test
-Rule của `hx-core` cấm điều đó; nếu vẫn xảy ra, gõ `/hx-workflows:verify` — skill bắt buộc chạy
-lệnh thật và chỉ đóng goal khi pass. Khi goal còn mở, hook `stop-gate` cũng không cho agent dừng.
+Rule của `hx-core` cấm điều đó; nếu vẫn xảy ra, gõ `/hx-workflows:verify` — script chạy lệnh thật
+và chỉ đóng goal khi pass. Khi goal còn mở mà chưa có `verify.json` pass, hook `stop-gate` không cho
+agent dừng (tối đa `maxContinues` lần); lần verify gần nhất lỗi thì hook nêu luôn lệnh nào lỗi.

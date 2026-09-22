@@ -42,4 +42,4 @@ warn > 4k), `rules-frontmatter` (trigger ∈ always_on|model_decision|glob|manua
 glob needs globs), `placeholders`, `skills` (name = dir, `^[a-z0-9]+(-[a-z0-9]+)*$`,
 description), `agents` (tool names in the agy registry), `hooks` (scripts exist,
 timeout ≤ 10), `state-ignored`, `state-dir`, `goal` (goal.json schema),
-`checks-runnable` (manifest checks match package.json scripts), `hx-plugins`.
+`checks-runnable` (manifest checks match package.json scripts; Maven/Gradle wrapper and uv/poetry lockfile exist for the checks that use them), `hx-plugins`.

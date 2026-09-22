@@ -67,13 +67,15 @@ Agent gọi subagent `planner`, lưu `docs/plans/<ngày>-<chủ-đề>-plan.md`,
 `.agents/state/goal.json` (mục tiêu đang mở + lệnh kiểm tra).
 
 ```
-/hx-workflows:tdd T1
+/hx-workflows:execute
 ```
-Viết test đỏ → code xanh → refactor cho task T1. Lặp cho các task tiếp theo.
+Chạy cả plan: lấy task mở, làm test-first (task độc lập → subagent `executor` song song), chạy lệnh Verify của
+task, tick, lặp; cuối cùng chạy verify toàn bộ. Muốn làm tay từng task: `/hx-workflows:tdd T1`.
 
 ```
 /hx-workflows:review
-/hx-workflows:verify
+/hx-workflows:verify      # chạy script verify.js: bằng chứng vào .agents/state/verify.json, đóng goal nếu pass
+/hx-workflows:commit      # commit theo nhóm hợp lý, đúng style repo
 /hx-workflows:ship
 ```
 
@@ -88,10 +90,12 @@ Cuối phiên hoặc trước khi đổi máy:
 
 - **Rules** của `hx-core` luôn được nạp: dùng skill trước, theo dõi việc bằng task artifact, không nói
   "xong" khi chưa chạy kiểm tra.
-- Trước mỗi lượt model, hook bơm phần **Priority** của `.agents/state/notepad.md` và goal đang mở.
+- Trước mỗi lượt model, hook bơm phần **Priority** của `.agents/state/notepad.md`, goal đang mở, kết quả verify gần nhất
+  và các notice lint/format mà hook PostToolUse xếp vào `.agents/state/lint.json` khi bạn sửa file.
 - Trước mỗi `run_command`, hook chặn lệnh phá hoại (`rm -rf /`, force-push lên main, `DROP DATABASE`…)
   hoặc yêu cầu xác nhận (`rm -rf <dir>`, `sudo`, `curl | sh`…).
-- Khi agent định dừng mà `goal.json` còn `active` và chưa `done`, hook bắt nó tiếp tục (tối đa 5 lần).
+- Khi agent định dừng mà goal còn `active` và chưa có `verify.json` pass cho goal đó, hook bắt nó tiếp tục (tối đa 5 lần).
+  Model không tự đánh dấu `done: true` được: chỉ script verify ghi, hook deny mọi ghi tay vào `goal.json`/`verify.json`.
 
 ## 5. Tắt những gì bạn không muốn
 

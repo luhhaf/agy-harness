@@ -2,9 +2,15 @@
 'use strict';
 // PostToolUse hook for file writes: remind about the project's formatter.
 // It never changes files. stdout is always {} (the contract for PostToolUse).
+// agy shows neither stderr nor anything but {} from this event to the model,
+// so the reminder is queued in .agents/state/lint.json and injected on the
+// next turn by pre-invocation-context.js. Each hint repeats at most once per
+// REMIND_EVERY_MS so it does not spam every edit.
 const fs = require('fs');
 const path = require('path');
-const { run, workspaceRoot, log } = require('./lib');
+const { run, workspaceRoot, stateDir, readLint, writeLint, log } = require('./lib');
+
+const REMIND_EVERY_MS = 30 * 60 * 1000;
 
 const FORMATTERS = [
   { file: '.prettierrc', hint: 'Prettier config found: run `npx prettier --write <file>` on files you changed.' },
@@ -31,18 +37,37 @@ function hintsFor(root) {
         continue;
       }
     }
-    hints.push(f.hint);
+    if (!hints.includes(f.hint)) hints.push(f.hint);
   }
   return hints;
+}
+
+/**
+ * Queue the hints that were not reminded recently. Returns the hints queued.
+ * Exported for tests.
+ */
+function queueHints(dir, hints, now = Date.now()) {
+  if (!dir || !hints.length) return [];
+  const data = readLint(dir);
+  const queued = [];
+  for (const h of hints) {
+    const last = Date.parse(data.reminded[h] || '') || 0;
+    if (now - last < REMIND_EVERY_MS) continue;
+    data.reminded[h] = new Date(now).toISOString();
+    data.notices.push({ at: new Date(now).toISOString(), source: 'hx-formatter', text: h });
+    queued.push(h);
+  }
+  if (queued.length) writeLint(dir, data);
+  return queued;
 }
 
 if (require.main === module) {
   run((input) => {
     if (input.error) log(`tool reported error at step ${input.stepIdx}: ${input.error}`);
     const ws = workspaceRoot(input);
-    if (ws) for (const h of hintsFor(ws)) log(h);
+    if (ws) for (const h of queueHints(stateDir(input), hintsFor(ws))) log(h);
     return {};
   }, {});
 }
 
-module.exports = { hintsFor };
+module.exports = { hintsFor, queueHints, REMIND_EVERY_MS };

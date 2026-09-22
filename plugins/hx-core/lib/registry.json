@@ -1,5 +1,5 @@
 {
-  "_comment": "Facts about agy 1.2.6 that doctor checks against. Update when agy changes (see docs/04-agents.md).",
+  "_comment": "Facts about agy 1.2.7 that doctor checks against (tool list unchanged since 1.2.6). Update when agy changes (see docs/04-agents.md).",
   "tools": [
     "view_file", "run_command", "manage_task", "send_message", "schedule", "invoke_subagent",
     "define_subagent", "manage_subagents", "write_to_file", "replace_file_content", "generate_image",
@@ -10,6 +10,6 @@
   "ruleMaxChars": 12000,
   "rootRulesWarnChars": 4000,
   "hookMaxTimeout": 10,
-  "hxSkills": ["using-harness", "notepad", "handoff", "setup", "doctor", "brainstorm", "plan", "tdd", "debug", "review", "verify", "ship"],
+  "hxSkills": ["using-harness", "notepad", "handoff", "setup", "doctor", "brainstorm", "plan", "tdd", "debug", "review", "verify", "ship", "execute", "commit"],
   "hxPlugins": ["hx-core", "hx-workflows", "hx-agents", "hx-guard"]
 }

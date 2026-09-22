@@ -1,11 +1,32 @@
 {
   "name": "agy-harness",
-  "owner": { "name": "luatnq" },
-  "metadata": { "description": "Development harness plugins for Antigravity CLI", "version": "0.1.0" },
+  "owner": {
+    "name": "luatnq"
+  },
+  "metadata": {
+    "description": "Development harness plugins for Antigravity CLI",
+    "version": "0.3.0"
+  },
   "plugins": [
-    { "name": "hx-core",      "source": "./plugins/hx-core",      "description": "Always-on rules, tool map, notepad, handoff" },
-    { "name": "hx-workflows", "source": "./plugins/hx-workflows", "description": "brainstorm, plan, tdd, debug, review, verify, ship" },
-    { "name": "hx-agents",    "source": "./plugins/hx-agents",    "description": "explorer, planner, executor, reviewer, verifier subagents" },
-    { "name": "hx-guard",     "source": "./plugins/hx-guard",     "description": "Safety and persistence hooks" }
+    {
+      "name": "hx-core",
+      "source": "./plugins/hx-core",
+      "description": "setup/doctor for a per-project harness (Node, Maven, Gradle, Go, Python), always-on rules, tool map, notepad, handoff"
+    },
+    {
+      "name": "hx-workflows",
+      "source": "./plugins/hx-workflows",
+      "description": "brainstorm, plan, execute, tdd, debug, review, verify (evidence script), commit, ship"
+    },
+    {
+      "name": "hx-agents",
+      "source": "./plugins/hx-agents",
+      "description": "explorer, planner, executor, reviewer, verifier subagents"
+    },
+    {
+      "name": "hx-guard",
+      "source": "./plugins/hx-guard",
+      "description": "Safety and persistence hooks: dangerous-command guard, verify evidence protection, context injection, stop gate"
+    }
   ]
 }

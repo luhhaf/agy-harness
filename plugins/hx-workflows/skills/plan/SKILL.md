@@ -43,11 +43,13 @@ Output: `docs/plans/YYYY-MM-DD-<topic>-plan.md`, a task artifact, and
   "updated": "YYYY-MM-DDTHH:MM"
 }
 ```
-   The `hx-guard` stop hook uses this file: while `active` is true and `done`
-   is false, the agent is asked to keep working (max `maxContinues` times).
-   `/hx-workflows:verify` sets `done: true` when all `checks` pass.
-7. Tell the user the plan path and ask: "Start with T1 using
-   `/hx-workflows:tdd`?"
+   The `hx-guard` stop hook uses this file: while `active` is true, the agent
+   is asked to keep working (max `maxContinues` times) until the verify script
+   has recorded a passing run in `.agents/state/verify.json`. Only
+   `/hx-workflows:verify` (its script) sets `done: true`; writing it by hand
+   is denied by the guard hook.
+7. Tell the user the plan path and ask: "Run the whole plan with
+   `/hx-workflows:execute`, or start with T1 using `/hx-workflows:tdd`?"
 
 ## Plan format
 

@@ -99,3 +99,33 @@ test('GENERATED lists every template path so doctor and --force share one source
   assert.ok(GENERATED.includes('AGENTS.md'));
   assert.ok(GENERATED.includes('.agents/hooks/post-edit-lint.js'));
 });
+
+test('maven project: wrapper commands in AGENTS.md, test glob rule, hook with linting disabled', () => {
+  const root = tmpProject({ 'pom.xml': '<project/>', mvnw: '#!/bin/sh', '.gitignore': '' });
+  const r = runSetup(root, {});
+  const mvnw = process.platform === 'win32' ? 'mvnw.cmd' : './mvnw';
+  assert.equal(r.stack.kind, 'maven');
+  assert.deepEqual(r.checks, [`${mvnw} -q test`]);
+  assert.match(read(root, 'AGENTS.md'), new RegExp(`build tool: ${mvnw.replace(/[./]/g, '\\$&')}`));
+  assert.match(read(root, 'AGENTS.md'), /-q test/);
+  assert.match(read(root, '.agents/rules/tests.md'), /\*\*\/src\/test\/\*\*/);
+  assert.match(read(root, '.agents/rules/tests.md'), /-q test/);
+  assert.equal(exists(root, '.agents/rules/typescript.md'), false);
+  assert.match(read(root, '.agents/hooks/post-edit-lint.js'), /const LINT = ""/);
+  assert.match(read(root, '.agents/hooks/post-edit-lint.js'), /const EXT = \[\]/);
+});
+
+test('python + ruff + uv project: prefixed checks and a ruff per-file hook', () => {
+  const root = tmpProject({ 'pyproject.toml': '[tool.ruff]\n[tool.pytest.ini_options]\n', 'uv.lock': '', 'tests/test_x.py': '' });
+  const r = runSetup(root, {});
+  assert.equal(r.stack.kind, 'python');
+  assert.deepEqual(r.checks, ['uv run ruff check .', 'uv run pytest -q']);
+  assert.match(read(root, 'AGENTS.md'), /package manager: uv/);
+  assert.match(read(root, 'AGENTS.md'), /uv run ruff check \./);
+  assert.match(read(root, '.agents/skills/project-checks/SKILL.md'), /uv run pytest -q/);
+  assert.match(read(root, '.agents/rules/tests.md'), /test_\*\.py/);
+  const hook = read(root, '.agents/hooks/post-edit-lint.js');
+  assert.match(hook, /const LINT = "uv run ruff check"/);
+  assert.match(hook, /const EXT = \["\.py"\]/);
+  assert.match(hook, /const NON_EMPTY_IS_ISSUE = false/);
+});

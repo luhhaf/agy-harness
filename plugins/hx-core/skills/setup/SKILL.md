@@ -3,9 +3,9 @@ name: setup
 description: >-
   Set up the standard hx harness inside the current project: root AGENTS.md,
   .agents/ (harness.json, glob rules, project-checks skill, post-edit lint hook,
-  state dir) and .gitignore. Detects the stack (Node: npm/pnpm/yarn/bun,
-  TypeScript, eslint) and fills the build/test commands; the model then fills
-  the conventions from the real code. Use when the user says "setup harness",
+  state dir) and .gitignore. Detects the stack (Node with npm/pnpm/yarn/bun,
+  Maven, Gradle, Go, Python with uv/poetry/pip) and fills the build/test
+  commands; the model then fills the conventions from the real code. Use when the user says "setup harness",
   "init harness", "chuẩn hoá project cho agy", or when a code project has no
   .agents/harness.json yet.
 metadata:
@@ -39,14 +39,23 @@ and a root `AGENTS.md`, and `/hx-core:doctor` reports no errors.
 
 4. **Fill the placeholders** (the part that needs code understanding). For each
    item in `fills`:
-   - Read the real code first: `package.json`, the top-level folders, one or two
-     existing tests, lint/format config. Do not guess.
+   - Read the real code first: the build file (`package.json`, `pom.xml`,
+     `build.gradle`, `go.mod`, `pyproject.toml`), the top-level folders, one or
+     two existing tests, lint/format config. Do not guess.
+   - **Existing or large project** (more than ~30 source files, or the fills
+     need architectural knowledge): delegate the survey to the `explorer`
+     subagent with `invoke_subagent`. Task: "Map this repo for AGENTS.md: main
+     folders and what lives in each, entry points, how tests are organised and
+     run, lint/format config, generated files or areas that must not be edited.
+     Return at most 300 words, every item with a path." Fill from its answer;
+     open a file yourself only when its answer is unsure.
    - Replace the `<!-- hx:fill: ... -->` marker with 3–8 concrete lines. Facts
      only (paths, commands, names); no general advice the model already knows.
    - Keep root `AGENTS.md` under 4000 characters.
-   If `checks` is empty (unknown stack), ask the user for the exact test, lint
-   and build commands, then put them in `AGENTS.md`, the `project-checks`
-   skill and `.agents/harness.json` (`checks`).
+   If `checks` is empty (unknown stack, or a Python project with no ruff/pytest
+   markers), ask the user for the exact test, lint and build commands, then put
+   them in `AGENTS.md`, the `project-checks` skill and `.agents/harness.json`
+   (`checks`).
 
 5. **If `AGENTS.md` was skipped** (the project already had one): show the user
    a proposed "## Build and test" section with the detected commands and ask
@@ -64,11 +73,21 @@ and a root `AGENTS.md`, and `/hx-core:doctor` reports no errors.
 |---|---|
 | `AGENTS.md` | always-on project facts: build/test commands, layout, conventions, do-not list |
 | `.agents/harness.json` | manifest: stack, `checks` (used by `/hx-workflows:verify`), generated files |
-| `.agents/rules/tests.md` | glob rule for test files |
+| `.agents/rules/tests.md` | glob rule for test files (globs per stack: `*.test.*`, `src/test/**`, `*_test.go`, `test_*.py`…) |
 | `.agents/rules/typescript.md` | glob rule for `.ts/.tsx` (TypeScript projects only) |
 | `.agents/skills/project-checks/SKILL.md` | the project's check commands in order |
-| `.agents/hooks.json` + `.agents/hooks/post-edit-lint.js` | PostToolUse: eslint on the edited file, report only |
-| `.agents/state/` (gitignored) | notepad, goal, handoff |
+| `.agents/hooks.json` + `.agents/hooks/post-edit-lint.js` | PostToolUse: per-file linter on the edited file (eslint, `ruff check`, `gofmt -l`; none for Maven/Gradle). Report only, never edits. Results go to `.agents/state/lint.json`, not stderr (agy shows hook stderr to nobody); the `hx-guard` PreInvocation hook injects them on the next turn, so hx-guard must be enabled to see them |
+| `.agents/state/` (gitignored) | notepad, goal, handoff, lint notices |
+
+Detected stacks and the checks they produce (cheapest first):
+
+| Stack | Marker | Checks |
+|---|---|---|
+| Node | `package.json` | `<pm> run typecheck`, `<pm> run lint`, `<pm> test`, `<pm> run build` (only existing scripts) |
+| Maven | `pom.xml` | `./mvnw -q spotless:check` (if spotless), `./mvnw -q test` (`mvn` without wrapper) |
+| Gradle | `build.gradle[.kts]` / `settings.gradle[.kts]` | `./gradlew check` (`gradle` without wrapper) |
+| Go | `go.mod` | `go build ./...`, `go vet ./...`, `golangci-lint run` (if config), `go test ./...` |
+| Python | `pyproject.toml`, `setup.py`, `requirements.txt`… | `[uv run \|poetry run ]ruff check .`, `mypy .`, `pytest -q` (each only when detected) |
 
 ## Done when
 `doctor` prints `Harness OK` with 0 errors and no `placeholders` warning.

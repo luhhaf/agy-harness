@@ -95,6 +95,45 @@ function writeJson(file, obj) {
   fs.writeFileSync(file, JSON.stringify(obj, null, 2) + '\n');
 }
 
+const LINT_FILE = 'lint.json';
+const MAX_NOTICES = 20;
+const NOTICE_CHARS = 600;
+
+/** Read `<stateDir>/lint.json`; always returns { notices: [], reminded: {} } shaped data. */
+function readLint(dir) {
+  const v = dir ? readJsonIfExists(path.join(dir, LINT_FILE)) : null;
+  return {
+    notices: v && Array.isArray(v.notices) ? v.notices : [],
+    reminded: v && v.reminded && typeof v.reminded === 'object' ? v.reminded : {},
+  };
+}
+
+function writeLint(dir, data) {
+  writeJson(path.join(dir, LINT_FILE), { notices: data.notices.slice(-MAX_NOTICES), reminded: data.reminded });
+}
+
+/**
+ * Append a notice for the model to see on its next turn (hooks cannot talk to
+ * the model directly: PostToolUse output must be {} and stderr is not shown).
+ * notice: { source, file?, text }. Returns false when the workspace is unknown.
+ */
+function appendNotice(dir, notice) {
+  if (!dir) return false;
+  const data = readLint(dir);
+  data.notices.push({ at: new Date().toISOString(), ...notice, text: String(notice.text || '').slice(0, NOTICE_CHARS) });
+  writeLint(dir, data);
+  return true;
+}
+
+/** Take all pending notices and clear them. */
+function drainNotices(dir) {
+  if (!dir) return [];
+  const data = readLint(dir);
+  if (!data.notices.length) return [];
+  writeLint(dir, { notices: [], reminded: data.reminded });
+  return data.notices;
+}
+
 /**
  * Run a hook body safely: any thrown error becomes `fallback` on stdout
  * and a line on stderr, and the process always exits 0.
@@ -110,4 +149,4 @@ function run(fn, fallback) {
   writeOutput(out === undefined ? fallback : out);
 }
 
-module.exports = { readInput, writeOutput, log, workspaceRoot, appDataDirs, stateDir, readJsonIfExists, readTextIfExists, writeJson, run };
+module.exports = { readInput, writeOutput, log, workspaceRoot, appDataDirs, stateDir, readJsonIfExists, readTextIfExists, writeJson, run, readLint, writeLint, appendNotice, drainNotices, LINT_FILE };

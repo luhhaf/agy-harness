@@ -40,6 +40,8 @@ function detectNode(root) {
     workspaces: Boolean(pkg.value && pkg.value.workspaces),
     scripts: Object.keys(scripts),
     checks,
+    testGlobs: ['**/*.test.*', '**/*.spec.*', '**/__tests__/**'],
+    lint: eslint ? { cmd: 'npx eslint --no-error-on-unmatched-pattern', exts: ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'] } : null,
     notes,
   };
 }
