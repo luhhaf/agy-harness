@@ -11,7 +11,10 @@
 | Subagent treo | Tên tool sai kiểu khác (theo docs agy) | Kill trong `/agents`; sửa `tools` |
 | Hook không chạy | `node` không có trong PATH của agy; hoặc plugin `hx-guard` disabled | `agy -p "/hooks" --output-format json` phải thấy 4 hook; `which node` / `where node`; nếu dùng nvm/fnm, đảm bảo PATH khi mở agy (Windows: mở terminal mới sau khi cài Node) |
 | Hook `stop-gate` không ép tiếp tục trong `agy -p` | `workspacePaths` rỗng và không tra được workspace | Đảm bảo `~/.gemini/antigravity-cli/cache/last_conversations.json` có dòng cho workspace (agy tự ghi khi tạo hội thoại); xem [05-hooks.md](05-hooks.md) |
-| Agent lặp mãi "Goal is still active" | `goal.json` không được đóng | `/hx-workflows:verify`; hoặc sửa `"active": false`; tối đa `maxContinues` (5) rồi tự dừng |
+| Agent lặp mãi "Goal is still active" / "no passing verify evidence" | `goal.json` chưa được đóng bằng bằng chứng (`verify.json` pass cho đúng goal) | `/hx-workflows:verify` (script chạy check thật và tự đóng goal); nếu kẹt thật, sửa `"active": false` và nói lý do; tối đa `maxContinues` (5) rồi tự dừng |
+| Bị chặn `[hx-guard:goal-done]` hoặc `[hx-guard:verify-evidence]` | Agent định ghi tay `"done": true` vào `goal.json` hoặc sửa `verify.json` | Đúng thiết kế: chạy `/hx-workflows:verify`; `done` chỉ do script đặt. Xem [05-hooks.md](05-hooks.md) |
+| `verify` báo `exit 3: no checks found` | Project chưa có `checks` trong `.agents/harness.json` và heuristics không đoán được | `/hx-core:setup`, hoặc `--check "<lệnh>"` |
+| Không thấy kết quả lint sau khi sửa file | Hook chỉ ghi vào `.agents/state/lint.json`; hx-guard (PreInvocation) mới bơm cho model ở lượt sau | Bật `hx-guard`; xem `cat .agents/state/lint.json` |
 | Lệnh bị chặn oan (`[hx-guard:…]`) | Pattern quá rộng | Sửa `plugins/hx-guard/hooks/patterns.json`, thêm test, `node scripts/test-hooks.js` |
 | Trong print mode lệnh `ask` bị từ chối | Headless không hỏi được | Thêm `permissions.allow` trong `~/.gemini/antigravity-cli/settings.json` hoặc `--dangerously-skip-permissions` (deny vẫn chặn) |
 | Rules quá dài bị cắt | Budget rules 20k token, mỗi file ≤ 12k ký tự | Rút gọn `rules/AGENTS.md`; chuyển chi tiết vào skill `references/` |

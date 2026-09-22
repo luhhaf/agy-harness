@@ -38,7 +38,8 @@ metadata:
 5. **Record.** Mark the task `- [x]` in the task artifact. Update the plan file
    if the task changed.
 6. Repeat from step 2 for the next behaviour. When the task is complete,
-   run `/hx-workflows:verify`.
+   run `/hx-workflows:verify` (its script records the evidence). If you are
+   working through a plan, `/hx-workflows:execute` takes the next task.
 
 ## Output for the user (short)
 - test added: path and name

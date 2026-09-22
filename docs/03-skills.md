@@ -26,11 +26,13 @@ thật sự cần nhớ: mục tiêu hiện tại, ràng buộc cứng.
 |---|---|---|---|
 | `brainstorm` | Chốt *cái gì* và *tại sao* trước khi code. Hỏi 1 câu/lượt, 2–3 hướng, YAGNI | ý tưởng | `docs/plans/<date>-<topic>-design.md`, 1 dòng Decisions trong notepad |
 | `plan` | Chia thành task nhỏ có lệnh verify; gọi subagent `planner` | design | `docs/plans/<date>-<topic>-plan.md`, task artifact, `.agents/state/goal.json` (active) |
+| `execute` | Chạy **cả plan** tới cùng: lấy task kế tiếp, làm theo tdd (hoặc `executor` song song cho task độc lập), chạy Verify của task, tick artifact, cuối cùng chạy verify script | plan + task artifact | mọi task `- [x]`, goal đóng bằng bằng chứng |
 | `tdd` | Red → green → refactor cho 1 task | task | test + code, tick task artifact |
 | `debug` | Reproduce → isolate → hypothesis → fix → regression test | lỗi | root cause + fix + test |
 | `review` | Review diff bằng subagent `reviewer`, tự kiểm chứng finding | diff/branch/PR | danh sách P0/P1/P2 + verdict |
-| `verify` | Chạy check thật, đọc output, báo bảng bằng chứng | – | `goal.json.done = true` nếu tất cả pass |
-| `ship` | verify → review → commit sạch → PR description → handoff | – | PR text, goal đóng |
+| `verify` | Chạy `scripts/verify.js`: check thật, dừng ở lỗi đầu tiên, ghi bằng chứng | – | `.agents/state/verify.json`; `goal.json.done = true` **chỉ khi** tất cả pass |
+| `commit` | Commit theo nhóm logic, đúng style message của repo, không commit state/secret; không push | working tree | commit(s) |
+| `ship` | verify → review → `commit` → PR description → handoff | – | PR text, goal đóng |
 
 ### Quy ước chung của mọi skill
 - Kết thúc bằng bước **verify** hoặc chỉ sang `verify`.
@@ -38,10 +40,18 @@ thật sự cần nhớ: mục tiêu hiện tại, ràng buộc cứng.
 - Có nhánh "nếu không có subagent" để chạy được khi `hx-agents` bị tắt.
 - Không tự commit/push/tạo PR nếu bạn chưa nói.
 
-### Cách `verify` tìm lệnh kiểm tra
-Theo thứ tự: `checks` trong `.agents/harness.json` (skill `project-checks`) → `checks` trong `goal.json` → `Makefile` → `package.json` scripts → `./mvnw`/`mvn`
-→ `./gradlew` → `pytest`/`ruff` → `go test`. Với Java/Spring: `./mvnw -q verify` (hoặc
-`./gradlew check`). Muốn cố định, ghi `checks` khi `plan`, hoặc sửa `goal.json` bằng tay.
+### Cách `verify` hoạt động (từ 0.2.0: script, không phải model tự khai)
+`plugins/hx-workflows/skills/verify/scripts/verify.js --root <workspace>` tìm lệnh theo thứ tự:
+`--check` → `checks` trong `.agents/harness.json` (do `/hx-core:setup` ghi) → `checks` trong `goal.json`
+→ heuristics (`package.json` scripts, `./mvnw`, `./gradlew`, `go`, `pytest`, `Makefile`). Chạy lần lượt
+trong root project, dừng ở lệnh lỗi đầu tiên, ghi `.agents/state/verify.json` (`passed`, từng lệnh: exit,
+ms, 30 dòng cuối) và **chỉ khi pass** mới đặt `goal.json` `done: true, active: false`.
+Exit: 0 pass · 1 fail · 2 sai tham số · 3 không tìm thấy check.
+
+Đây là cơ chế enforcement: hook `stop-gate` của hx-guard chỉ cho agent dừng khi `verify.json`
+là bằng chứng pass cho đúng goal đó; hook `pre-tool-guard` từ chối ghi tay `verify.json` hoặc
+`"done": true` vào `goal.json`. Lối thoát khi bị kẹt: đặt `"active": false` và nói rõ lý do.
+Muốn cố định lệnh: ghi `checks` vào `harness.json`, hoặc `--check "<cmd>"`.
 
 ## Dùng trong headless / CI
 

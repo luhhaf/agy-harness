@@ -1,15 +1,16 @@
 # agy-harness
 
 Bộ plugin biến **Antigravity CLI (`agy`)** thành một harness phát triển phần mềm có kỷ luật:
-brainstorm → plan → TDD → review → verify → ship, với subagent chuyên biệt và hook an toàn.
+brainstorm → plan → execute (TDD) → review → verify (có bằng chứng) → commit/ship, với subagent
+chuyên biệt và hook an toàn.
 Dùng được trên nhiều máy: clone repo, chạy `install.sh`, xong.
 
 | Plugin | Vai trò | Bật/tắt riêng |
 |---|---|---|
-| `hx-core` | `setup` + `doctor` dựng và kiểm tra harness chuẩn agy trong từng project; rules always-on; skill `using-harness`, `notepad`, `handoff` | ✔ |
-| `hx-workflows` | 7 skill quy trình: `brainstorm`, `plan`, `tdd`, `debug`, `review`, `verify`, `ship` | ✔ |
+| `hx-core` | `setup` + `doctor` dựng và kiểm tra harness chuẩn agy trong từng project (Node, Maven, Gradle, Go, Python); rules always-on; skill `using-harness`, `notepad`, `handoff` | ✔ |
+| `hx-workflows` | 9 skill quy trình: `brainstorm`, `plan`, `execute`, `tdd`, `debug`, `review`, `verify` (script ghi bằng chứng), `commit`, `ship` | ✔ |
 | `hx-agents` | 5 subagent: `explorer`, `planner`, `executor`, `reviewer`, `verifier` | ✔ |
-| `hx-guard` | Hooks: chặn lệnh nguy hiểm, nhắc formatter, bơm notepad/goal mỗi lượt, giữ agent làm tới khi goal được verify | ✔ |
+| `hx-guard` | Hooks: chặn lệnh nguy hiểm, bảo vệ bằng chứng verify, bơm notepad/goal/lint mỗi lượt, giữ agent làm tới khi goal được verify bằng check thật | ✔ |
 
 ## Cài nhanh (macOS · Linux · Windows)
 
@@ -36,10 +37,10 @@ Lần đầu mở agy trong một project (một lần cho mỗi repo):
 ```
 /hx-workflows:brainstorm  Tôi muốn thêm đăng nhập bằng Google
 /hx-workflows:plan
-/hx-workflows:tdd         T1
+/hx-workflows:execute     → chạy hết plan (hoặc /hx-workflows:tdd T1 từng task)
 /hx-workflows:review
-/hx-workflows:verify
-/hx-workflows:ship
+/hx-workflows:verify      → script chạy check thật, ghi .agents/state/verify.json, đóng goal
+/hx-workflows:commit      (checkpoint) · /hx-workflows:ship (PR)
 /hx-core:handoff          (cuối phiên / đổi máy)
 ```
 
@@ -59,7 +60,7 @@ Lần đầu mở agy trong một project (một lần cho mỗi repo):
 
 ```bash
 node scripts/validate-all.js   # agy plugin validate cho từng plugin
-node scripts/test.js           # node --test cho hooks + setup/doctor (không cần agy); test-hooks.js = chỉ hx-guard
+node scripts/test.js           # node --test cho hooks, verify script, setup/doctor (không cần agy); test-hooks.js = chỉ hx-guard
 node scripts/e2e.js            # kiểm tra agy phát hiện skill/hook (không tốn quota)
 node scripts/e2e.js --full     # + 3 lượt model thật (tốn quota)
 ```
