@@ -6,7 +6,7 @@ Dùng được trên nhiều máy: clone repo, chạy `install.sh`, xong.
 
 | Plugin | Vai trò | Bật/tắt riêng |
 |---|---|---|
-| `hx-core` | Rules always-on, bảng map hành động→tool của agy, skill `notepad`, `handoff` | ✔ |
+| `hx-core` | `setup` + `doctor` dựng và kiểm tra harness chuẩn agy trong từng project; rules always-on; skill `using-harness`, `notepad`, `handoff` | ✔ |
 | `hx-workflows` | 7 skill quy trình: `brainstorm`, `plan`, `tdd`, `debug`, `review`, `verify`, `ship` | ✔ |
 | `hx-agents` | 5 subagent: `explorer`, `planner`, `executor`, `reviewer`, `verifier` | ✔ |
 | `hx-guard` | Hooks: chặn lệnh nguy hiểm, nhắc formatter, bơm notepad/goal mỗi lượt, giữ agent làm tới khi goal được verify | ✔ |
@@ -27,6 +27,12 @@ Yêu cầu: `agy` ≥ 1.2.6, Node.js ≥ 18, git. Không cần Python hay bash t
 
 ## Dùng hằng ngày
 
+Lần đầu mở agy trong một project (một lần cho mỗi repo):
+```
+/hx-core:setup            → AGENTS.md + .agents/{harness.json, rules, skills/project-checks, hooks} ; commit chung
+/hx-core:doctor           → 13 check, exit 1 nếu sai; chạy được trong CI: node <hx-core>/skills/doctor/scripts/doctor.js
+```
+
 ```
 /hx-workflows:brainstorm  Tôi muốn thêm đăng nhập bằng Google
 /hx-workflows:plan
@@ -46,13 +52,14 @@ Yêu cầu: `agy` ≥ 1.2.6, Node.js ≥ 18, git. Không cần Python hay bash t
 - [Viết plugin/skill/agent mới](docs/06-viet-plugin-moi.md)
 - [Ví dụ phiên làm việc Java/Spring](docs/07-vi-du-java-spring.md)
 - [Troubleshooting](docs/08-troubleshooting.md)
+- [Dựng harness cho project: setup & doctor](docs/09-setup-project.md)
 - Nghiên cứu nền: [docs/research/](docs/research/)
 
 ## Kiểm thử
 
 ```bash
 node scripts/validate-all.js   # agy plugin validate cho từng plugin
-node scripts/test-hooks.js     # node --test cho hooks (không cần agy)
+node scripts/test.js           # node --test cho hooks + setup/doctor (không cần agy); test-hooks.js = chỉ hx-guard
 node scripts/e2e.js            # kiểm tra agy phát hiện skill/hook (không tốn quota)
 node scripts/e2e.js --full     # + 3 lượt model thật (tốn quota)
 ```

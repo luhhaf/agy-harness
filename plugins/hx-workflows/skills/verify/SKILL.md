@@ -20,8 +20,8 @@ metadata:
 
 ## Steps
 
-1. **Find the checks.** In order: `checks` in `.agents/state/goal.json`;
-   `Makefile` targets; `package.json` scripts (`test`, `lint`, `build`,
+1. **Find the checks.** In order: `checks` in `.agents/harness.json` (or the
+   `project-checks` skill); `checks` in `.agents/state/goal.json`; `Makefile` targets; `package.json` scripts (`test`, `lint`, `build`,
    `typecheck`); Maven `./mvnw -q verify` (or `mvn -q test`); Gradle
    `./gradlew check`; Python `pytest -q` + `ruff check .`; Go
    `go build ./... && go test ./...`. Prefer the project's own wrapper scripts

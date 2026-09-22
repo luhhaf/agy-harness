@@ -26,7 +26,7 @@
 agy --version
 cat ~/.gemini/config/plugins.json ~/.gemini/config/config.json     # Windows: type %USERPROFILE%\.gemini\config\plugins.json
 node ~/agy-harness/scripts/validate-all.js
-node ~/agy-harness/scripts/test-hooks.js
+node ~/agy-harness/scripts/test.js
 node ~/agy-harness/scripts/e2e.js            # discovery, không tốn quota
 node ~/agy-harness/scripts/e2e.js --full     # 3 lượt model thật
 grep -iE 'hook|plugin' ~/.gemini/antigravity-cli/cli.log | tail -20   # Windows: findstr /i "hook plugin" %USERPROFILE%\.gemini\antigravity-cli\cli.log

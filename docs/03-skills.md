@@ -11,6 +11,8 @@ Gọi: `/hx-workflows:plan <ghi chú>` — phần sau tên skill là tham số t
 
 | Skill | Khi nào dùng | Tạo ra |
 |---|---|---|
+| `setup` | Project code chưa có `.agents/harness.json`; "setup harness", "chuẩn hoá project cho agy" | Root `AGENTS.md`, `.agents/{harness.json, rules/*.md, skills/project-checks, hooks.json, hooks/post-edit-lint.js, state/}`, dòng `.agents/state/` trong `.gitignore` — xem [09-setup-project](09-setup-project.md) |
+| `doctor` | Sau `setup`; skill/hook/subagent chạy lạ trong project; "kiểm tra harness" | Báo cáo 13 check `[ok|warn|FAIL]`, exit 1 nếu có lỗi, `--fix` cho state |
 | `using-harness` | Đầu phiên; khi skill nhắc tool bạn không có; không biết chọn skill nào | Bảng map hành động→tool, sơ đồ chọn workflow |
 | `notepad` | "nhớ cái này", "ta đã quyết gì" | `.agents/state/notepad.md` (Priority / Decisions / Working notes / Open questions) |
 | `handoff` | Cuối phiên, đổi máy, context dài | `.agents/state/handoff.md` |
@@ -37,7 +39,7 @@ thật sự cần nhớ: mục tiêu hiện tại, ràng buộc cứng.
 - Không tự commit/push/tạo PR nếu bạn chưa nói.
 
 ### Cách `verify` tìm lệnh kiểm tra
-Theo thứ tự: `checks` trong `goal.json` → `Makefile` → `package.json` scripts → `./mvnw`/`mvn`
+Theo thứ tự: `checks` trong `.agents/harness.json` (skill `project-checks`) → `checks` trong `goal.json` → `Makefile` → `package.json` scripts → `./mvnw`/`mvn`
 → `./gradlew` → `pytest`/`ruff` → `go test`. Với Java/Spring: `./mvnw -q verify` (hoặc
 `./gradlew check`). Muốn cố định, ghi `checks` khi `plan`, hoặc sửa `goal.json` bằng tay.
 

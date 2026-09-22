@@ -75,7 +75,7 @@ node $HOME\agy-harness\install.js
 - Trạng thái `.agents/state/` và `last_conversations.json` dùng đường dẫn Windows; hooks so sánh
   bằng `path` của Node nên không cần chỉnh.
 - Chưa có máy Windows để chạy e2e trong repo này; cùng code Node đã chạy trên macOS và Linux.
-  Nếu gặp lỗi, chạy `node scripts\test-hooks.js` và `node scripts\e2e.js` rồi gửi output.
+  Nếu gặp lỗi, chạy `node scripts\test.js` và `node scripts\e2e.js` rồi gửi output.
 
 ## Linux
 

@@ -37,7 +37,12 @@ metadata:
 - **Hooks** (`hx-guard`): run automatically. They may block a dangerous
   command, add context before each turn, or ask you to continue when a goal
   is not done yet. If a hook blocks you, tell the user why and ask.
-- **State** (`.agents/state/` in the workspace):
+- **Project harness** (`<workspace>/.agents/`, committed, created by `/hx-core:setup`):
+  - `harness.json` — stack and the project's check commands (`checks`)
+  - `rules/*.md` — glob rules; `skills/project-checks` — how to run the checks
+  - `hooks.json` + `hooks/` — project hooks (lint on edit)
+  - root `AGENTS.md` — always-on project facts
+- **State** (`.agents/state/` in the workspace, gitignored):
   - `notepad.md` — decisions, open questions, working notes
   - `goal.json` — the current goal and its checks (written by `/hx-workflows:plan`)
   - `handoff.md` — summary for the next session (written by `/hx-core:handoff`)
@@ -46,6 +51,8 @@ metadata:
 
 | Situation | Skill |
 |---|---|
+| Code project without `.agents/harness.json` | `/hx-core:setup` (once), then `/hx-core:doctor` |
+| Skills/hooks/subagents misbehave in this project | `/hx-core:doctor` |
 | New feature, new project, unclear request | `/hx-workflows:brainstorm` then `/hx-workflows:plan` |
 | Write code for a planned task | `/hx-workflows:tdd` |
 | Something is broken | `/hx-workflows:debug` |

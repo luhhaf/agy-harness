@@ -27,8 +27,9 @@ diện đây là **bulk plugins directory** khi `agy plugin install <repo>`.
 ```
                 ┌──────────── hx-core ────────────┐
                 │ rules/AGENTS.md (always-on)     │  "dùng skill trước, task artifact,
-                │ skills: using-harness, notepad, │   verify trước khi nói xong"
-                │         handoff                 │
+                │ skills: setup, doctor,          │   verify trước khi nói xong"
+                │   using-harness, notepad,       │  setup/doctor = script Node trong
+                │   handoff                       │  lib/ → sinh & kiểm tra .agents/ của project
                 └───────────────┬─────────────────┘
                                 │ đọc/ghi .agents/state/*
    ┌──────── hx-workflows ──────┴──────────┐      ┌──────── hx-agents ────────┐
@@ -49,6 +50,20 @@ diện đây là **bulk plugins directory** khi `agy plugin install <repo>`.
 Mỗi plugin **độc lập**: tắt `hx-agents` thì skill `review` tự làm review thay vì gọi subagent
 (skill có nhánh "nếu không có subagent"). Tắt `hx-guard` thì mất chặn lệnh và vòng lặp goal,
 nhưng workflow vẫn chạy.
+
+## Harness của từng project (`<repo>/.agents/`, commit chung)
+
+`/hx-core:setup` sinh, `/hx-core:doctor` kiểm tra:
+
+| File | Ai ghi | Ai đọc |
+|---|---|---|
+| `AGENTS.md` (root repo) | `setup` (chỉ khi chưa có), bạn | agy (always-on trong scope repo), Codex/Cursor cũng đọc |
+| `.agents/harness.json` | `setup` | skill `verify` (`checks`), `doctor` |
+| `.agents/rules/*.md` | `setup` (khung glob), model điền | agy khi sửa file khớp glob |
+| `.agents/skills/project-checks/SKILL.md` | `setup` | skill `verify`, bạn (`/project-checks`) |
+| `.agents/hooks.json` + `hooks/post-edit-lint.js` | `setup` | agy: PostToolUse → eslint file vừa sửa, chỉ báo |
+
+Chi tiết: [09-setup-project.md](09-setup-project.md).
 
 ## Luồng dữ liệu qua `.agents/state/`
 

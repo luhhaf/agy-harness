@@ -43,7 +43,17 @@ node ~/agy-harness/scripts/e2e.js
 
 ## 3. Phiên làm việc đầu tiên
 
-Mở agy trong repo dự án của bạn (`cd ~/work/my-app && agy`), rồi:
+Mở agy trong repo dự án của bạn (`cd ~/work/my-app && agy`). Lần đầu với repo này:
+
+```
+/hx-core:setup
+```
+Script dò stack (Node: npm/pnpm/yarn/bun, TypeScript, eslint), tạo `AGENTS.md` + `.agents/` (manifest,
+rule theo glob, skill `project-checks`, hook lint sau khi sửa file), thêm `.agents/state/` vào `.gitignore`;
+model đọc code thật để điền conventions; cuối cùng chạy `/hx-core:doctor`. Commit `.agents/` + `AGENTS.md`
+để cả team dùng chung. Chi tiết: [09-setup-project.md](09-setup-project.md).
+
+Sau đó:
 
 ```
 /hx-workflows:brainstorm Thêm API xuất báo cáo PDF cho đơn hàng

@@ -1,11 +1,7 @@
 #!/usr/bin/env node
 'use strict';
-// Unit + contract tests for hx-guard hooks (Node >= 18, no dependencies, any OS).
-const path = require('path');
-const fs = require('fs');
+// Kept for compatibility: runs only the hx-guard hook tests. Use scripts/test.js for everything.
 const { spawnSync } = require('child_process');
-const { ROOT } = require('./lib');
-const dir = path.join(ROOT, 'plugins', 'hx-guard', 'hooks', '__tests__');
-const files = fs.readdirSync(dir).filter((f) => f.endsWith('.test.js')).map((f) => path.join(dir, f));
-const r = spawnSync(process.execPath, ['--test', ...files], { stdio: 'inherit', cwd: ROOT });
+const path = require('path');
+const r = spawnSync(process.execPath, [path.join(__dirname, 'test.js'), 'hx-guard'], { stdio: 'inherit' });
 process.exit(r.status === null ? 1 : r.status);

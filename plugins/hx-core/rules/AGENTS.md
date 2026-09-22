@@ -17,6 +17,8 @@ These rules are always on. Follow them in every task.
 ## 3. Verify before you say "done"
 - Never say a task is complete, fixed, or passing without running the real
   check (test, build, lint) and reading its output in this session.
+- If the project has a `project-checks` skill or `.agents/harness.json`, use
+  those commands; they are the project's truth.
 - If a check fails, say so and show the failing output. Do not hide it.
 
 ## 4. Keep the notepad
@@ -41,3 +43,9 @@ These rules are always on. Follow them in every task.
 - Use `invoke_subagent` for parallel or read-heavy work:
   `explorer` to map code, `reviewer` to review a diff, `verifier` to run checks.
 - Give the subagent a clear goal, the files it needs, and what to return.
+
+## 8. Set up the project harness once
+- If the workspace is a code project (`package.json`, `pom.xml`, `go.mod`,
+  `pyproject.toml`…) but has no `.agents/harness.json`, suggest
+  `/hx-core:setup` once in the session. Do not insist; do not run it unasked.
+- If skills, hooks or subagents behave oddly in a project, run `/hx-core:doctor`.
