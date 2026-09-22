@@ -111,3 +111,43 @@ test('countSources / hasSources; formatReport lists items, totals and leftovers'
   assert.deepEqual(KINDS, ['claude-md', 'skills', 'commands', 'agents', 'rules', 'hooks', 'permissions', 'mcp', 'memory']);
   assert.ok(Array.isArray(scan(root, { home: HOME() })));
 });
+
+test('multi-file item reports an honest per-file status, not one collapsed action', () => {
+  const root = tmpProject(PROJECT);
+  runAdopt(root, { apply: true, home: HOME() });
+  // Hand-edit the deployed SKILL.md target directly, and change only the go.sh source.
+  fs.writeFileSync(path.join(root, '.agents', 'skills', 'deploy', 'SKILL.md'), '# mine\n');
+  fs.writeFileSync(path.join(root, '.claude', 'skills', 'deploy', 'scripts', 'go.sh'), 'echo v2\n');
+  const r = runAdopt(root, { apply: true, home: HOME() });
+  const row = byTarget(r, '.agents/skills/deploy/SKILL.md');
+  const skillMdFile = row.files.find((f) => f.target === '.agents/skills/deploy/SKILL.md');
+  const goShFile = row.files.find((f) => f.target === '.agents/skills/deploy/scripts/go.sh');
+  assert.equal(skillMdFile.action, 'skipped');
+  assert.match(skillMdFile.reason, /edited by hand/);
+  assert.equal(goShFile.action, 'updated');
+  assert.match(read(root, '.agents/skills/deploy/SKILL.md'), /# mine/);
+  const text = formatReport(r);
+  assert.match(text, /skills\/deploy\/SKILL\.md — skipped: .*edited by hand/);
+});
+
+test('adopt.json entries are pruned on a full run but survive an --only run', () => {
+  const root = tmpProject(PROJECT);
+  const home = HOME();
+  runAdopt(root, { apply: true, home });
+  fs.rmSync(path.join(root, '.claude', 'skills', 'deploy'), { recursive: true, force: true });
+
+  // --only run first: the unscanned skill source is now gone, but pruning must not
+  // touch it because this run never looked at skills at all.
+  const only = runAdopt(root, { apply: true, only: ['claude-md'], home });
+  let a = JSON.parse(read(root, ADOPT_FILE));
+  assert.notEqual(a.items['.agents/skills/deploy/SKILL.md'], undefined);
+  assert.notEqual(a.items['.agents/skills/deploy/scripts/go.sh'], undefined);
+  assert.equal(only.notes.some((n) => /pruned/.test(n)), false);
+
+  // Full run: the now-source-less skill entries are stale and must be pruned.
+  const full = runAdopt(root, { apply: true, home });
+  a = JSON.parse(read(root, ADOPT_FILE));
+  assert.equal(a.items['.agents/skills/deploy/SKILL.md'], undefined);
+  assert.equal(a.items['.agents/skills/deploy/scripts/go.sh'], undefined);
+  assert.ok(full.notes.some((n) => /pruned 2 stale adopt\.json entry\(ies\)/.test(n)), full.notes.join('\n'));
+});

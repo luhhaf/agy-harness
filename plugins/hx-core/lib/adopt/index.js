@@ -7,7 +7,7 @@ const os = require('os');
 const path = require('path');
 const registry = require('../registry.json');
 const toolmap = require('./toolmap');
-const { sha256, walk } = require('./common');
+const { sha256, walk, item } = require('./common');
 const { exists, readJson, writeText, stateIgnored, appendGitignore, listDirs } = require('../fs');
 const { memoryDirs } = require('./memory');
 
@@ -30,12 +30,20 @@ function makeCtx(opts) {
   return { home: opts.home || os.homedir(), registry, toolmap };
 }
 
-/** Run the selected converters. Pure. */
+/** Run the selected converters. Pure. A throwing converter cannot abort the whole scan. */
 function scan(root, opts = {}) {
   const ctx = makeCtx(opts);
   const kinds = opts.only && opts.only.length ? opts.only : KINDS;
   const out = [];
-  for (const k of kinds) if (CONVERTERS[k]) out.push(...CONVERTERS[k].scan(path.resolve(root), ctx));
+  for (const k of kinds) {
+    if (!CONVERTERS[k]) continue;
+    const converterKind = CONVERTERS[k].kind || k;
+    try {
+      out.push(...CONVERTERS[k].scan(path.resolve(root), ctx));
+    } catch (err) {
+      out.push(item({ kind: converterKind, source: `${converterKind} converter`, target: '', status: 'unsupported', reason: `converter failed: ${err.message}` }));
+    }
+  }
   return out;
 }
 
@@ -97,7 +105,7 @@ function runAdopt(root, opts = {}) {
   const writes = [];
 
   for (const it of items) {
-    const row = { kind: it.kind, source: it.source, target: it.target, status: it.status, action: null, reason: it.reason, leftovers: it.leftovers || [] };
+    const row = { kind: it.kind, source: it.source, target: it.target, status: it.status, action: null, reason: it.reason, leftovers: it.leftovers || [], files: [] };
     if (it.status === 'unsupported' || it.content === null) { report.items.push(row); continue; }
     const tracked = it.track !== false;
     const entries = [{ source: it.source, target: it.target, content: it.content, sourceHash: it.sourceHash }, ...(it.files || [])];
@@ -112,11 +120,31 @@ function runAdopt(root, opts = {}) {
       }
       if (d.manual) manual = true;
       if (RANK[d.action] > RANK[action] || (action === 'skipped' && !reason)) { action = d.action; reason = d.reason; }
+      row.files.push({ target: e.target, action: d.action, reason: d.reason });
     }
     row.action = action;
     if (action === 'skipped') { row.status = manual ? 'manual' : 'skipped'; row.reason = [reason, it.reason].filter(Boolean).join('; '); }
     else row.status = it.status === 'manual' ? 'manual' : action;
     report.items.push(row);
+  }
+
+  // Prune stale adopt.json entries only on a full run. An --only run does not scan
+  // every kind, so its item list has no entries at all for the unscanned kinds; if we
+  // pruned "unproduced" targets here, every entry from a kind the user didn't ask to
+  // touch would look stale and get deleted — silent data loss, worse than the cruft
+  // this is meant to clean up. Never simplify this away.
+  const fullRun = !(opts.only && opts.only.length);
+  if (fullRun) {
+    const live = new Set();
+    for (const it of items) {
+      if (it.target) live.add(it.target);
+      for (const f of it.files || []) live.add(f.target);
+    }
+    const stale = Object.keys(nextItems).filter((t) => !live.has(t));
+    if (stale.length) {
+      for (const t of stale) delete nextItems[t];
+      report.notes.push(`pruned ${stale.length} stale adopt.json entry(ies): ${stale.join(', ')}`);
+    }
   }
 
   if (opts.apply) {
@@ -143,6 +171,9 @@ function formatReport(r) {
   const lines = [`hx adopt — ${path.basename(r.root)}${r.apply ? '' : ' [dry-run]'}`];
   for (const it of r.items) {
     lines.push(`[${it.status}] ${it.source}${it.target ? ` → ${it.target}` : ''}${it.reason ? ` — ${it.reason}` : ''}`);
+    for (const f of it.files || []) {
+      if (f.action !== it.action || f.reason) lines.push(`    ${f.target} — ${f.action}: ${f.reason}`);
+    }
   }
   const count = (s) => r.items.filter((i) => i.status === s).length;
   lines.push(`created ${count('created')}, updated ${count('updated')}, skipped ${count('skipped')}, manual ${count('manual')}, unsupported ${count('unsupported')}`);
