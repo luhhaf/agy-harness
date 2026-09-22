@@ -30,6 +30,7 @@ Yêu cầu: `agy` ≥ 1.2.6, Node.js ≥ 18, git. Không cần Python hay bash t
 
 Lần đầu mở agy trong một project (một lần cho mỗi repo):
 ```
+/hx-core:adopt            → nếu project đã có CLAUDE.md/.claude/: chuyển sang AGENTS.md + .agents/ (dry-run, rồi --apply)
 /hx-core:setup            → AGENTS.md + .agents/{harness.json, rules, skills/project-checks, hooks} ; commit chung
 /hx-core:doctor           → 14 check, exit 1 nếu sai; chạy được trong CI: node <hx-core>/skills/doctor/scripts/doctor.js
 ```
