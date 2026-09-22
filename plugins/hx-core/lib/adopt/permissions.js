@@ -11,8 +11,8 @@ function summarise(list, entries) {
   const bash = [];
   const other = [];
   for (const e of entries) {
-    const m = /^Bash\((.*)\)$/.exec(String(e));
-    if (m) bash.push(m[1]); else other.push(String(e));
+    const m = /^Bash(?:\((.*)\))?$/.exec(String(e));
+    if (m) bash.push(m[1] || 'all commands'); else other.push(String(e));
   }
   const parts = [];
   if (bash.length) {

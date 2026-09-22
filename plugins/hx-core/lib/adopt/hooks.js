@@ -38,7 +38,16 @@ function scan(root, ctx) {
   if (!hooks || typeof hooks !== 'object') return [];
   const out = [];
   for (const [event, entries] of Object.entries(hooks)) {
-    (Array.isArray(entries) ? entries : []).forEach((entry, i) => {
+    if (!Array.isArray(entries)) {
+      out.push(item({ kind, source: `.claude/settings.json#hooks/${event}`, target: '', status: 'unsupported', reason: `expected an array of hook entries, got ${typeof entries}; check this hook by hand` }));
+      continue;
+    }
+    entries.forEach((entry, i) => {
+      if (entry === null || typeof entry !== 'object') {
+        const label = `${event}[${i}]`;
+        out.push(item({ kind, source: `.claude/settings.json#hooks/${label}`, target: '', status: 'unsupported', reason: 'entry is not an object; check this hook by hand' }));
+        return;
+      }
       const list = Array.isArray(entry.hooks) ? entry.hooks : [entry];
       list.forEach((hook, j) => {
         const label = `${event}[${i}]${list.length > 1 ? `/${j}` : ''}`;

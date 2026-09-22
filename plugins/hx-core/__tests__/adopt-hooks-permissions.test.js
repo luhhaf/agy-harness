@@ -39,15 +39,56 @@ test('hooks: no settings or no hooks → []', () => {
   assert.deepEqual(hooks.scan(tmpProject({ '.claude/settings.json': { permissions: {} } }), ctx()), []);
 });
 
+test('hooks: non-object entry does not crash, returns unsupported item', () => {
+  const root = tmpProject({
+    '.claude/settings.json': {
+      hooks: {
+        PreToolUse: [null],
+      },
+    },
+  });
+  const items = hooks.scan(root, ctx());
+  assert.equal(items.length, 1);
+  assert.equal(items[0].status, 'unsupported');
+  assert.match(items[0].reason, /entry is not an object/);
+});
+
+test('hooks: non-array event value returns unsupported item', () => {
+  const root = tmpProject({
+    '.claude/settings.json': {
+      hooks: {
+        PreToolUse: { matcher: 'Bash', hooks: [{ type: 'command', command: 'rm -rf /' }] },
+      },
+    },
+  });
+  const items = hooks.scan(root, ctx());
+  assert.equal(items.length, 1);
+  assert.equal(items[0].status, 'unsupported');
+  assert.match(items[0].reason, /expected an array/);
+});
+
+test('hooks: Notification event exercises NONE list', () => {
+  const root = tmpProject({
+    '.claude/settings.json': {
+      hooks: {
+        Notification: [{ hooks: [{ type: 'command', command: 'notify' }] }],
+      },
+    },
+  });
+  const items = hooks.scan(root, ctx());
+  assert.equal(items.length, 1);
+  assert.match(items[0].reason, /no agy equivalent/);
+});
+
 test('permissions: one item per non-empty list, with Bash prefixes summarised', () => {
   const root = tmpProject({
-    '.claude/settings.json': { permissions: { allow: ['Bash(npm test:*)', 'Bash(git status)', 'Read(~/.zshrc)', 'WebFetch(domain:example.com)'], deny: ['Bash(rm -rf:*)'], ask: [] } },
+    '.claude/settings.json': { permissions: { allow: ['Bash(npm test:*)', 'Bash(git status)', 'Read(~/.zshrc)', 'WebFetch(domain:example.com)', 'Bash'], deny: ['Bash(rm -rf:*)'], ask: [] } },
   });
   const items = permissions.scan(root, ctx());
   assert.deepEqual(items.map((i) => i.source), ['.claude/settings.json#permissions/allow', '.claude/settings.json#permissions/deny']);
   assert.equal(items[0].kind, 'permission');
   assert.equal(items[0].status, 'unsupported');
-  assert.match(items[0].reason, /allow these command prefixes in agy settings\.json \/ \/permissions: npm test:\*, git status/);
+  assert.match(items[0].reason, /allow these command prefixes in agy settings\.json \/ \/permissions: npm test:\*, git status, all commands/);
   assert.match(items[0].reason, /directory\/domain scopes.*Read\(~\/\.zshrc\), WebFetch\(domain:example\.com\)/);
   assert.match(items[1].reason, /deny patterns.*hx-guard patterns\.json.*rm -rf:\*/);
 });
