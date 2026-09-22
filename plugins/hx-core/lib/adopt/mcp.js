@@ -15,9 +15,9 @@ function scan(root, ctx) {
   const j = readJson(abs);
   const notes = ['check with /mcp in agy'];
   if (raw.includes('${')) notes.push('${VAR} expansion is Claude syntax; set the values for agy if it does not expand them');
-  if (j.error) { it.status = 'unsupported'; it.reason = `.mcp.json is not valid JSON: ${j.error}`; if (notes.length > 1) it.reason += `; ${notes[1]}`; return [it]; }
+  if (j.error) { it.status = 'unsupported'; it.reason = `.mcp.json is not valid JSON: ${j.error}`; if (notes.length > 1) it.reason += `; ${notes.slice(1).join('; ')}`; return [it]; }
   const servers = j.value && j.value.mcpServers;
-  if (!servers || typeof servers !== 'object' || Array.isArray(servers)) { it.status = 'unsupported'; it.reason = '.mcp.json has no "mcpServers" object'; if (notes.length > 1) it.reason += `; ${notes[1]}`; return [it]; }
+  if (!servers || typeof servers !== 'object' || Array.isArray(servers)) { it.status = 'unsupported'; it.reason = '.mcp.json has no "mcpServers" object'; if (notes.length > 1) it.reason += `; ${notes.slice(1).join('; ')}`; return [it]; }
   it.content = JSON.stringify({ mcpServers: servers }, null, 2) + '\n';
   it.reason = notes.join('; ');
   return [it];

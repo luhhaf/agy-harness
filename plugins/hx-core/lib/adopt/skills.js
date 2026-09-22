@@ -24,10 +24,25 @@ function scan(root, ctx) {
     const origName = keep.name;
     keep.name = name;
     const rw = ctx.toolmap.rewrite(body);
-    const it = item({ kind, source: `${src}/SKILL.md`, target: `.agents/skills/${name}/SKILL.md`, content: renderFrontmatter(keep) + rw.text, sourceHash: sha256(raw), leftovers: rw.leftovers, files: [] });
+    // Own copy, not the same array as rw.leftovers: an unreadable companion below is
+    // appended here so it shows up in the report's Leftovers section, without also
+    // inflating rw.leftovers.length and misattributing the manual reason below to
+    // "tool names left in prose".
+    const it = item({ kind, source: `${src}/SKILL.md`, target: `.agents/skills/${name}/SKILL.md`, content: renderFrontmatter(keep) + rw.text, sourceHash: sha256(raw), leftovers: [...rw.leftovers], files: [] });
+    const unreadable = [];
     for (const f of walk(dir)) {
       if (f === 'SKILL.md') continue;
-      const buf = fs.readFileSync(path.join(dir, f));
+      let buf;
+      try {
+        buf = fs.readFileSync(path.join(dir, f));
+      } catch (err) {
+        // One bad companion (permission error, broken symlink target, etc.) must not
+        // throw out of scan() and take the whole skill — or, via the orchestrator's
+        // converterFailed handling, the whole `skills` kind and its prune — with it.
+        it.leftovers.push({ line: 0, text: `companion file ${f} unreadable: ${err.message}` });
+        unreadable.push(f);
+        continue;
+      }
       it.files.push({ source: `${src}/${f}`, target: `.agents/skills/${name}/${f}`, content: buf, sourceHash: sha256(buf) });
     }
     const reasons = [];
@@ -38,6 +53,7 @@ function scan(root, ctx) {
     if (ctx.registry.hxSkills.includes(name)) manual(`shadows /hx-*:${name}; rename the skill`);
     if (!keep.description) manual('description is required');
     if (rw.leftovers.length) manual('tool names left in prose; see leftovers');
+    if (unreadable.length) manual(`companion file(s) unreadable, left out: ${unreadable.join(', ')}`);
     it.reason = reasons.join('; ');
     out.push(it);
   }

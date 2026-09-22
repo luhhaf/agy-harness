@@ -24,7 +24,9 @@ function summarise(list, entries) {
   return parts.join('; ');
 }
 
-function scan(root) {
+// ctx is unused here; the second parameter is kept for signature uniformity with the
+// other converters, all of which are called as scan(root, ctx).
+function scan(root, ctx) {
   const s = readJson(path.join(root, '.claude', 'settings.json'));
   const perms = s.value && s.value.permissions;
   if (!perms || typeof perms !== 'object') return [];
