@@ -57,7 +57,8 @@ These rules are always on. Follow them in every task.
   notices for files you just edited. Act on lint notices before moving on.
 
 ## 8. Set up the project harness once
-- If the workspace is a code project (`package.json`, `pom.xml`, `go.mod`,
-  `pyproject.toml`…) but has no `.agents/harness.json`, suggest
-  `/hx-core:setup` once in the session. Do not insist; do not run it unasked.
+- If the workspace has `CLAUDE.md` or `.claude/` but no `.agents/adopt.json`,
+  suggest `/hx-core:adopt` once in the session (it reuses the Claude Code
+  harness on agy). Then, if there is no `.agents/harness.json`, suggest
+  `/hx-core:setup`. Do not insist; do not run them unasked.
 - If skills, hooks or subagents behave oddly in a project, run `/hx-core:doctor`.

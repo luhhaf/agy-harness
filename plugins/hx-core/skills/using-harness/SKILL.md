@@ -57,6 +57,7 @@ metadata:
 
 | Situation | Skill |
 |---|---|
+| Project has `CLAUDE.md` / `.claude/` but no `.agents/adopt.json` | `/hx-core:adopt` (before setup) |
 | Code project without `.agents/harness.json` | `/hx-core:setup` (once), then `/hx-core:doctor` |
 | Skills/hooks/subagents misbehave in this project | `/hx-core:doctor` |
 | New feature, new project, unclear request | `/hx-workflows:brainstorm` then `/hx-workflows:plan` |
