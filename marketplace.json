@@ -5,13 +5,13 @@
   },
   "metadata": {
     "description": "Development harness plugins for Antigravity CLI",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "plugins": [
     {
       "name": "hx-core",
       "source": "./plugins/hx-core",
-      "description": "setup/doctor for a per-project harness (Node, Maven, Gradle, Go, Python), always-on rules, tool map, notepad, handoff"
+      "description": "adopt (reuse a Claude Code harness), setup/doctor for a per-project harness (Node, Maven, Gradle, Go, Python), always-on rules, tool map, notepad, handoff"
     },
     {
       "name": "hx-workflows",

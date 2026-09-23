@@ -3,6 +3,26 @@
 Mục tiêu: mọi project mà team dùng agy đều có **cùng một bộ `.agents/`** đúng chuẩn Antigravity,
 commit chung, để skills/hooks/subagents của hx chạy chính xác và giống nhau trên mọi máy.
 
+## Dự án đã có harness Claude Code
+
+Nếu project có `CLAUDE.md` hoặc `.claude/` (cấu hình Claude Code hiện tại) nhưng chưa chuyển sang
+agy, chạy `/hx-core:adopt` trước tiên để tái sử dụng những gì đã có. Sau đó chạy `/hx-core:setup` và
+`/hx-core:doctor` bình thường.
+
+Skill `adopt` chuyển:
+- `CLAUDE.md` (với `@import`) → `AGENTS.md`: tạo mới nếu `AGENTS.md` chưa tồn tại; nếu đã
+  tồn tại và không phải do `adopt` ghi thì bỏ qua (`manual`, merge tay); nếu do `adopt` ghi
+  từ lần chạy trước thì lần chạy sau ghi đè khi `CLAUDE.md` đổi (đây là cơ chế theo dõi drift
+  ở dưới), trừ khi bị sửa tay thì cũng bỏ qua trừ khi dùng `--force`
+- `.claude/skills/`, `.claude/commands/`, `.claude/agents/`, `.claude/rules/` → `.agents/skills/`, `.agents/agents/`, `.agents/rules/`
+- `.mcp.json` → `.agents/mcp_config.json`
+- Auto-memory của repo → phần Decisions trong `.agents/state/notepad.md` (bỏ secret)
+- Hooks và permissions trong `.claude/settings.json` được phân loại (không tự động chuyển; xem tài liệu SKILL.md của adopt)
+
+Sau khi `adopt` chạy xong, nó ghi `.agents/adopt.json` (ghi lại hash nguồn/đích) để lần kế tiếp
+an toàn (chỉ ghi đè file nếu target chưa bị sửa tay, trừ khi dùng `--force`). Skill `doctor` thêm check
+`adopt-drift` để cảnh báo khi có Claude config chưa adopt hoặc khi nguồn thay đổi sau lần adopt gần nhất.
+
 ## Chạy
 
 Trong agy (mở tại root project):

@@ -15,7 +15,7 @@ const bad = (m) => { console.log(`  FAIL ${m}`); fail++; };
 console.log('== skills discovered ==');
 const sk = agyJson('/skills');
 const skills = new Set(((sk && sk.command && sk.command.data && sk.command.data.skills) || []).map((s) => s.name));
-for (const s of ['hx-core:using-harness', 'hx-core:notepad', 'hx-core:handoff', 'hx-core:setup', 'hx-core:doctor', 'hx-workflows:brainstorm', 'hx-workflows:plan',
+for (const s of ['hx-core:using-harness', 'hx-core:notepad', 'hx-core:handoff', 'hx-core:setup', 'hx-core:doctor', 'hx-core:adopt', 'hx-workflows:brainstorm', 'hx-workflows:plan',
   'hx-workflows:execute', 'hx-workflows:tdd', 'hx-workflows:debug', 'hx-workflows:review', 'hx-workflows:verify', 'hx-workflows:commit', 'hx-workflows:ship']) {
   skills.has(s) ? ok(s) : bad(`missing ${s}`);
 }

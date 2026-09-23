@@ -137,6 +137,51 @@ function scriptOf(command) {
   return tok ? tok.replace(/^["']|["']$/g, '') : null;
 }
 
+function adoptDrift({ root, home }) {
+  const { scan, ADOPT_FILE } = require('./adopt');
+  const { sha256 } = require('./adopt/common');
+  const a = readJson(path.join(root, ADOPT_FILE));
+  const claudeDirs = ['skills', 'commands', 'agents', 'rules'].map((d) => path.join(root, '.claude', d));
+  const hasClaude = exists(path.join(root, 'CLAUDE.md')) || exists(path.join(root, '.claude', 'CLAUDE.md')) || claudeDirs.some(exists);
+  if (a.error === 'missing') {
+    return hasClaude
+      ? warn('adopt-drift', 'Claude Code config found (CLAUDE.md or .claude/) but not adopted', 'run /hx-core:adopt')
+      : ok('adopt-drift', 'no Claude Code config to adopt');
+  }
+  if (a.error) return fail('adopt-drift', `${ADOPT_FILE} is not valid JSON: ${a.error}`, 'fix or delete the file and run /hx-core:adopt --apply');
+  // readJson() only rejects malformed JSON; valid JSON that is null or a scalar (e.g.
+  // a truncated write) parses fine and leaves a.error undefined, so a.value.items would
+  // throw here without this guard.
+  if (!a.value || typeof a.value !== 'object') return fail('adopt-drift', `${ADOPT_FILE} does not contain a valid items object`, 'fix or delete the file and run /hx-core:adopt --apply');
+  const current = new Map();
+  for (const it of scan(root, { home })) {
+    if (it.content === null || it.track === false) continue;
+    current.set(it.target, it.sourceHash);
+    for (const f of it.files || []) current.set(f.target, f.sourceHash);
+  }
+  const removed = [];
+  const changed = [];
+  const missing = [];
+  let edited = 0;
+  const items = Object.entries(a.value.items || {});
+  for (const [target, entry] of items) {
+    if (!current.has(target)) removed.push(target);
+    else if (current.get(target) !== entry.sourceHash) changed.push(target);
+    try { if (sha256(fs.readFileSync(path.join(root, target))) !== entry.targetHash) edited++; } catch (_) { missing.push(target); }
+  }
+  if (changed.length || removed.length || missing.length) {
+    const parts = [];
+    if (changed.length) parts.push(`${changed.length} source(s) changed`);
+    if (removed.length) parts.push(`${removed.length} removed`);
+    if (missing.length) parts.push(`${missing.length} adopted file(s) missing`);
+    // A target can land in both removed and missing (its source is gone AND the
+    // previously-written file is gone too); de-duplicate so it is not printed twice.
+    const allTargets = [...new Set([...changed, ...removed, ...missing])];
+    return warn('adopt-drift', `${parts.join(', ')} since adopt: ${allTargets.join(', ')}`, 'run /hx-core:adopt --apply to re-create them, or remove the entry from .agents/adopt.json');
+  }
+  return ok('adopt-drift', `${items.length} adopted file(s) in sync${edited ? `; ${edited} edited by hand (adopt will skip them)` : ''}`);
+}
+
 function stateIgnoredCheck({ root, fix, fixed }) {
   if (stateIgnored(root)) return ok('state-ignored', '.agents/state/ is gitignored');
   if (fix) { appendGitignore(root, '.agents/state/'); fixed.push('state-ignored'); return ok('state-ignored', 'added .agents/state/ to .gitignore'); }
@@ -199,7 +244,7 @@ function hxPlugins({ home }) {
     : ok('hx-plugins', 'hx-* plugins registered');
 }
 
-const CHECKS = [agentsDir, manifest, rootRules, rulesFrontmatter, placeholders, skills, agents, hooks,
+const CHECKS = [agentsDir, manifest, rootRules, rulesFrontmatter, placeholders, skills, agents, hooks, adoptDrift,
   stateIgnoredCheck, stateDir, goal, checksRunnable, hxPlugins];
 
 /**

@@ -36,10 +36,10 @@ metadata:
      (`node ~/agy-harness/install.js`, `agy plugin enable hx-core`). Not a
      project problem.
 
-## Checks (id — what fails)
+## Checks (14 total; id — what fails)
 `agents-dir`, `manifest` (harness.json), `root-rules` (AGENTS.md ≤ 12k chars,
 warn > 4k), `rules-frontmatter` (trigger ∈ always_on|model_decision|glob|manual,
 glob needs globs), `placeholders`, `skills` (name = dir, `^[a-z0-9]+(-[a-z0-9]+)*$`,
 description), `agents` (tool names in the agy registry), `hooks` (scripts exist,
-timeout ≤ 10), `state-ignored`, `state-dir`, `goal` (goal.json schema),
+timeout ≤ 10), `adopt-drift` (Claude Code adoption status: sources changed, removed, or targets missing/deleted), `state-ignored`, `state-dir`, `goal` (goal.json schema),
 `checks-runnable` (manifest checks match package.json scripts; Maven/Gradle wrapper and uv/poetry lockfile exist for the checks that use them), `hx-plugins`.

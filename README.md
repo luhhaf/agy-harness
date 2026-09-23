@@ -7,7 +7,7 @@ Dùng được trên nhiều máy: clone repo, chạy `install.sh`, xong.
 
 | Plugin | Vai trò | Bật/tắt riêng |
 |---|---|---|
-| `hx-core` | `setup` + `doctor` dựng và kiểm tra harness chuẩn agy trong từng project (Node, Maven, Gradle, Go, Python); rules always-on; skill `using-harness`, `notepad`, `handoff` | ✔ |
+| `hx-core` | `adopt` tái sử dụng harness Claude Code có sẵn (`CLAUDE.md`, `.claude/`); `setup` + `doctor` dựng và kiểm tra harness chuẩn agy trong từng project (Node, Maven, Gradle, Go, Python); rules always-on; skill `using-harness`, `notepad`, `handoff` | ✔ |
 | `hx-workflows` | 9 skill quy trình: `brainstorm`, `plan`, `execute`, `tdd`, `debug`, `review`, `verify` (script ghi bằng chứng), `commit`, `ship` | ✔ |
 | `hx-agents` | 5 subagent: `explorer`, `planner`, `executor`, `reviewer`, `verifier` | ✔ |
 | `hx-guard` | Hooks: chặn lệnh nguy hiểm, bảo vệ bằng chứng verify, bơm notepad/goal/lint mỗi lượt, giữ agent làm tới khi goal được verify bằng check thật | ✔ |
@@ -30,8 +30,9 @@ Yêu cầu: `agy` ≥ 1.2.6, Node.js ≥ 18, git. Không cần Python hay bash t
 
 Lần đầu mở agy trong một project (một lần cho mỗi repo):
 ```
+/hx-core:adopt            → nếu project đã có CLAUDE.md/.claude/: chuyển sang AGENTS.md + .agents/ (dry-run, rồi --apply)
 /hx-core:setup            → AGENTS.md + .agents/{harness.json, rules, skills/project-checks, hooks} ; commit chung
-/hx-core:doctor           → 13 check, exit 1 nếu sai; chạy được trong CI: node <hx-core>/skills/doctor/scripts/doctor.js
+/hx-core:doctor           → 14 check, exit 1 nếu sai; chạy được trong CI: node <hx-core>/skills/doctor/scripts/doctor.js
 ```
 
 ```

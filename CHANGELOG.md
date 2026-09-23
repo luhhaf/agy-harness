@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 — 2026-09-22
+- **hx-core 0.4.0 — skill `adopt`**: tái sử dụng harness Claude Code có sẵn trong project trên agy.
+  Script `skills/adopt/scripts/adopt.js` (dry-run mặc định, `--apply` mới ghi, `--only`, `--force`)
+  chuyển `CLAUDE.md` (+`@import`) → `AGENTS.md`, `.claude/skills|commands|agents|rules` →
+  `.agents/…` (đổi tên tool `Read/Edit/Bash/…` → `view_file/replace_file_content/run_command/…`
+  chỉ trong code span và frontmatter; phần còn sót liệt kê `file:line`), `.mcp.json` →
+  `.agents/mcp_config.json`, auto-memory của repo → khối đánh dấu trong `notepad.md` (lọc secret).
+  Hooks và permissions trong `.claude/settings.json` không chuyển được: chỉ phân loại và chỉ ra phần
+  hx-guard/setup thay thế. Ghi `.agents/adopt.json` (hash nguồn/đích) để chạy lại an toàn; file đích
+  sửa tay được giữ nguyên trừ khi `--force`; không bao giờ ghi đè `AGENTS.md` không do adopt sinh.
+  `doctor` thêm check `adopt-drift` (14 check): cảnh báo khi có Claude config chưa adopt hoặc nguồn
+  đổi sau lần adopt gần nhất. 8 file test mới.
+
 ## 0.3.0 — 2026-09-22
 Sửa 6 điểm yếu từ đợt review "áp dụng agy vào phát triển phần mềm thật".
 

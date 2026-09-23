@@ -86,7 +86,12 @@ three places that must stay consistent when edited:
   are reported back so the model fills them from real code.
 - `lib/setup.js` `runSetup()` creates only missing files, **never** rewrites an existing root
   `AGENTS.md`; `--force` only touches files listed in `harness.json` `generated`.
-- `lib/doctor.js` — 13 read-only checks (exit 1 on error). Facts about agy it validates against (tool
+- `lib/adopt/` — `/hx-core:adopt`: one pure converter per Claude Code source (`claude-md`, `skills`,
+  `commands`, `agents`, `rules`, `mcp`, `memory`; `hooks`/`permissions` report only) with
+  `scan(root, ctx) → items`; `index.js` decides create/update/skip against `.agents/adopt.json`
+  (source/target hashes) and writes only with `--apply`. `toolmap.js` rewrites Claude tool names
+  only inside code spans and `<Name> tool`. Never overwrites an `AGENTS.md` it did not write.
+- `lib/doctor.js` — 14 read-only checks (exit 1 on error). Facts about agy it validates against (tool
   registry, rule `trigger` values, 12000/4000 char limits, hook timeout, expected hx skill/plugin names)
   live in `lib/registry.json` — update it when agy changes.
 
